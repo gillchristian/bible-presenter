@@ -1,0 +1,48 @@
+{
+  "name": "bible-presenter",
+  "private": true,
+  "author": "Christain Gill",
+  "scripts": {
+    "assets:dev": "cp -R dev/assets public/",
+    "assets:prod": "cp -R prod/assets dist/",
+    "build": "npm run prep-prod && npm run bundle && npm run assets:prod && npm run fixdist",
+    "build:dev": "spago build",
+    "bundle": "npm run bundle:build && npm run bundle:dce && npm run css:purge && npm run bundle:parcel",
+    "bundle:build": "PRODUCTION=True spago build --purs-args '--codegen corefn'",
+    "bundle:dce": "zephyr -f Main.main",
+    "bundle:parcel": "parcel build prod/index.html --public-url '.' --no-source-maps",
+    "clean": "rm -rf node_modules output dce-output .spago dist/* *.lock .cache .parcel-cache && git checkout dist/vercel.json",
+    "css:gen": "postcss build css/tailwind_inputs.css -o dev/tailwind.css",
+    "css:gen:all": "twpurs gen-purs --classes css/tailwind-classes.txt --all",
+    "css:gen:available": "twpurs gen-available-classes --css dev/tailwind.css --out css/tailwind-classes.txt",
+    "css:lock": "twpurs gen-purs --classes css/tailwind-classes.txt",
+    "css:lock:watch": "twpurs gen-purs --classes css/tailwind-classes.txt --watch",
+    "css:purge": "twpurs gen-css --classes css/tailwind-classes.txt --css dev/tailwind.css -o prod/tailwind.css",
+    "fixdist": "scripts/fix-dist.sh",
+    "prep-prod": "rm -rf dist && git checkout dist/vercel.json",
+    "pscid:build": "spago build",
+    "serve-dev": "parcel dev/index.html --open -p 8080",
+    "test": "spago test",
+    "watch": "spago build --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gillchristian/bible-presenter.git"
+  },
+  "devDependencies": {
+    "http-server": "^0.12.3",
+    "parcel": "^2.0.0-beta.1"
+  },
+  "dependencies": {
+    "@tailwindcss/forms": "^0.2.1",
+    "@tailwindcss/line-clamp": "^0.1.0",
+    "autoprefixer": "^10.1.0",
+    "decimal.js": "^10.2.0",
+    "marked": "^1.1.1",
+    "postcss": "^8.2.1",
+    "postcss-cli": "^8.3.1",
+    "tailwind-scrollbar": "^1.1.2",
+    "tailwindcss": "^2.0.2",
+    "tailwindcss-truncate-multiline": "^1.0.3"
+  }
+}
