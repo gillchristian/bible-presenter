@@ -12,7 +12,7 @@ import Tailwind as T
 import Web.Event.Event (Event)
 import Web.UIEvent.MouseEvent (toEvent)
 
-header :: forall i p r. Maybe Boolean -> (Route -> Event -> p) -> Maybe Route -> HH.HTML i p
+header :: forall i p. Maybe Boolean -> (Route -> Event -> p) -> Maybe Route -> HH.HTML i p
 header _ navigate route =
   HH.nav
     [ HP.classes [ T.py12, T.container, T.flex, T.justifyBetween, T.itemsCenter, T.flexWrap ] ]

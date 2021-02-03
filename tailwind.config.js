@@ -3,11 +3,15 @@ module.exports = {
   darkMode: false, // or 'media' or 'class'
   variants: {
     extend: {
-      backgroundColor: ["checked"],
+      backgroundColor: ["checked", "disabled"],
       borderColor: ["checked"],
       borderWidth: ["hover"],
       cursor: ["disabled"],
       opacity: ["disabled"],
+      ringColor: ["hover"],
+      ringOffsetColor: ["hover"],
+      ringOffsetWidth: ["hover"],
+      ringWidth: ["hover"],
     },
   },
   plugins: [
