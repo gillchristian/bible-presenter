@@ -12,6 +12,7 @@ type Env =
   { nav :: PushStateInterface
   , logLevel :: LogLevel
   , baseUrl :: BaseURL
+  , bibleApiUrl :: BaseURL
   , userEnv :: UserEnv
   }
 

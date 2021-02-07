@@ -3,19 +3,18 @@ module Bible.Page.Presenter where
 import Prelude
 
 import Bible.Capability.Navigate (class Navigate, navigate_)
-import Bible.Component.HTML.Utils (maybeElem)
+import Bible.Component.HTML.Slide as Slide
 import Bible.Data.Presentation (ToCoordinator(..), ToPresenter(..))
 import Bible.Data.Presentation as Presentation
 import Bible.Data.Route (Route)
+import Bible.Data.Slide (Slide, SlideContent(..))
 import Bible.Env (UserEnv)
 import Component.HOC.Connect as Connect
 import Control.Monad.Reader (class MonadAsk)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), maybe)
 import Effect.Aff.Class (class MonadAff)
 import Halogen as H
 import Halogen.HTML as HH
-import Halogen.HTML.Properties as HP
-import Tailwind as T
 import Web.Event.Event (Event)
 
 data Action
@@ -28,8 +27,7 @@ data Action
 type State
   = { currentUser :: Maybe Boolean
     , channel :: Maybe (Presentation.Channel ToCoordinator)
-    , bgImage :: String
-    , content :: Maybe String
+    , content :: Maybe Slide
     }
 
 defaultImage :: String
@@ -54,7 +52,6 @@ component = Connect.component $ H.mkComponent
   initialState { currentUser } =
     { currentUser
     , channel: Nothing
-    , bgImage: defaultImage
     , content: Nothing
     }
 
@@ -66,11 +63,7 @@ component = Connect.component $ H.mkComponent
       handleAction $ SendMsg $ GetState
       H.modify_ _ { channel = Just channel }
 
-    ReceiveMsg (SetImage img) -> H.modify_ _ { bgImage = img }
-
-    ReceiveMsg (PassState img) -> H.modify_ _ { bgImage = img }
-
-    ReceiveMsg (SetContent content) -> H.modify_ _ { content = Just content }
+    ReceiveMsg (SetSlide content) -> H.modify_ _ { content = Just content }
 
     SendMsg msg -> do
       { channel } <- H.get
@@ -84,23 +77,5 @@ component = Connect.component $ H.mkComponent
     Navigate route e -> navigate_ e route
 
   render :: forall slots. State -> H.ComponentHTML Action slots m
-  render { currentUser, bgImage, content: mbContent } =
-    HH.div
-      [ HP.classes
-          [ T.hScreen
-          , T.wScreen
-          , T.bgGray100
-          , T.flex
-          , T.justifyCenter
-          , T.itemsCenter
-          , T.bgCenter
-          , T.bgCover
-          ]
-      , HP.prop (H.PropName "style") $ "background-image: url('" <> bgImage <> "');"
-      ]
-      [ maybeElem mbContent \content ->
-          HH.div
-            [ HP.classes [ T.text7xl, T.textWhite, T.fontExtrabold ] ]
-            [ HH.text content ]
-
-      ]
+  render { currentUser, content } =
+    maybe (Slide.slide { background: Just defaultImage, content: Still }) Slide.slide content

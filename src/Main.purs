@@ -29,7 +29,7 @@ main = HA.runHalogenAff do
   _ <- HA.awaitBody
 
   let
-    baseUrl = ConfigProvider.provide
+    { baseUrl, bibleApiUrl } = ConfigProvider.provide
     logLevel = Dev
 
   userEnv <- liftEffect do
@@ -43,7 +43,7 @@ main = HA.runHalogenAff do
 
   let
     environment :: Env
-    environment = { nav, baseUrl, logLevel, userEnv }
+    environment = { nav, baseUrl, bibleApiUrl, logLevel, userEnv }
 
     rootComponent :: H.Component HH.HTML Router.Query {} Void Aff
     rootComponent = H.hoist (runAppM environment) Router.component

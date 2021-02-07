@@ -9,6 +9,7 @@ import Bible.Capability.Clipboard (class Clipboard)
 import Bible.Capability.LogMessages (class LogMessages)
 import Bible.Capability.Navigate (class Navigate, navigate, locationState)
 import Bible.Capability.Now (class Now)
+import Bible.Capability.Resource.Bible (class ManageBible)
 import Bible.Component.Utils (OpaqueSlot)
 import Bible.Data.Route (Route(..), routeCodec)
 import Bible.Env (UserEnv)
@@ -52,6 +53,7 @@ component
   => LogMessages m
   => Navigate m
   => Clipboard m
+  => ManageBible m
   => H.Component HH.HTML Query {} Void m
 component = Connect.component $ H.mkComponent
   { initialState: \{ currentUser } -> { route: Nothing, currentUser }

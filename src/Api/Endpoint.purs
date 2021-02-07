@@ -6,13 +6,18 @@ module Bible.Api.Endpoint where
 import Prelude hiding ((/))
 
 import Data.Generic.Rep (class Generic)
-import Routing.Duplex (RouteDuplex', root)
+import Routing.Duplex (RouteDuplex', root, segment, string)
 import Routing.Duplex.Generic (noArgs, sum)
+import Routing.Duplex.Generic.Syntax ((/))
 
 data Endpoint
   = BibleAPI
+  | DownloadBible String
 
 derive instance genericEndpoint :: Generic Endpoint _
 
 endpointCodec :: RouteDuplex' Endpoint
-endpointCodec = root $ sum {"BibleAPI": noArgs}
+endpointCodec = root
+  $ sum { "BibleAPI": noArgs
+        , "DownloadBible": "bibles" / string segment
+        }

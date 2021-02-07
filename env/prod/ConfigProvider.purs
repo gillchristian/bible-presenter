@@ -2,5 +2,8 @@ module ConfigProvider where
 
 import Bible.Api.Request (BaseURL(..))
 
-provide :: BaseURL
-provide = BaseURL "https://api.com"
+provide :: { baseUrl :: BaseURL, bibleApiUrl :: BaseURL }
+provide =
+  { baseUrl: BaseURL "https://api.com"
+  , bibleApiUrl: BaseURL "http://localhost:5000"
+  }

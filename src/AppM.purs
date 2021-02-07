@@ -4,11 +4,12 @@ import Prelude
 
 import Bible.Api.Endpoint (Endpoint(..))
 import Bible.Api.Request (RequestMethod(..))
-import Bible.Api.Utils (mkRequest)
+import Bible.Api.Utils (decode_, mkRequest)
 import Bible.Capability.Clipboard (class Clipboard)
 import Bible.Capability.LogMessages (class LogMessages)
 import Bible.Capability.Navigate (class Navigate, locationState, navigate)
 import Bible.Capability.Now (class Now)
+import Bible.Capability.Resource.Bible (class ManageBible)
 import Bible.Capability.Resource.List (class ManageList)
 import Bible.Data.Log as Log
 import Bible.Data.Route as Route
@@ -71,5 +72,12 @@ instance navigateAppM :: Navigate AppM where
     navigate route
 
 instance manageListAppM :: ManageList AppM where
-  createList _ =
-    map CA.stringify <$> mkRequest { endpoint: BibleAPI, method: Get }
+  createList _ = do
+    { baseUrl } <- ask
+    map CA.stringify <$> mkRequest { baseUrl, endpoint: BibleAPI, method: Get }
+
+instance manageBibleAppM :: ManageBible AppM where
+  downloadBible version = do
+    { bibleApiUrl } <- ask
+    let conf = { baseUrl: bibleApiUrl, endpoint: DownloadBible version, method: Get }
+    decode_ =<< mkRequest conf

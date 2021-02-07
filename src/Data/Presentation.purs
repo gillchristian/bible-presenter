@@ -2,6 +2,7 @@ module Bible.Data.Presentation where
 
 import Prelude
 
+import Bible.Data.Slide (Slide)
 import Bible.Foreign.BroadcastChannel as BroadcastChannel
 import Data.Argonaut.Core (jsonEmptyObject)
 import Data.Argonaut.Decode (class DecodeJson, JsonDecodeError(..), decodeJson, (.:))
@@ -17,22 +18,12 @@ import Halogen.Query.EventSource as HES
 --------------------------------------------------------------------------------
 
 data ToPresenter
-  = SetImage String
-  | SetContent String
-  | PassState String
+  = SetSlide Slide
 
 instance encodeJsonToPresenter :: EncodeJson ToPresenter where
-  encodeJson (SetImage img) =
-    "type" := "SetImage"
-      ~> "value" := img
-      ~> jsonEmptyObject
-  encodeJson (SetContent img) =
-    "type" := "SetContent"
-      ~> "value" := img
-      ~> jsonEmptyObject
-  encodeJson (PassState img) =
-    "type" := "PassState"
-      ~> "value" := ("image" := img ~> jsonEmptyObject)
+  encodeJson (SetSlide slide) =
+    "type" := "SetSlide"
+      ~> "value" := slide
       ~> jsonEmptyObject
 
 instance decodeJsonToPresenter :: DecodeJson ToPresenter where
@@ -41,16 +32,9 @@ instance decodeJsonToPresenter :: DecodeJson ToPresenter where
     type_ <- obj .: "type"
 
     case type_ of
-      "SetImage" -> do
+      "SetSlide" -> do
         value <- obj .: "value"
-        Right $ SetImage value
-      "SetContent" -> do
-        value <- obj .: "value"
-        Right $ SetContent value
-      "PassState" -> do
-        valueObj <- decodeJson =<< obj .: "value"
-        img <- valueObj .: "image"
-        Right $ PassState img
+        Right $ SetSlide value
       _ -> Left $ AtKey "type" $ UnexpectedValue $ encodeJson type_
 
 --------------------------------------------------------------------------------

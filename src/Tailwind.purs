@@ -35,13 +35,13 @@ bgGreen400 = ClassName "bg-green-400"
 border2 :: ClassName
 border2 = ClassName "border-2"
 
+-- | border
+border :: ClassName
+border = ClassName "border"
+
 -- | borderGray400
 borderGray400 :: ClassName
 borderGray400 = ClassName "border-gray-400"
-
--- | borderGreen400
-borderGreen400 :: ClassName
-borderGreen400 = ClassName "border-green-400"
 
 -- | borderNone
 borderNone :: ClassName
@@ -111,6 +111,10 @@ fontBold = ClassName "font-bold"
 fontExtrabold :: ClassName
 fontExtrabold = ClassName "font-extrabold"
 
+-- | gap2
+gap2 :: ClassName
+gap2 = ClassName "gap-2"
+
 -- | gap4
 gap4 :: ClassName
 gap4 = ClassName "gap-4"
@@ -126,6 +130,14 @@ gridCols2 = ClassName "grid-cols-2"
 -- | gridCols3
 gridCols3 :: ClassName
 gridCols3 = ClassName "grid-cols-3"
+
+-- | gridCols4
+gridCols4 :: ClassName
+gridCols4 = ClassName "grid-cols-4"
+
+-- | gridCols6
+gridCols6 :: ClassName
+gridCols6 = ClassName "grid-cols-6"
 
 -- | hScreen
 hScreen :: ClassName
@@ -143,17 +155,17 @@ hoverRing2 = ClassName "hover:ring-2"
 hoverRingGreen400 :: ClassName
 hoverRingGreen400 = ClassName "hover:ring-green-400"
 
--- | hoverRingIndigo500
-hoverRingIndigo500 :: ClassName
-hoverRingIndigo500 = ClassName "hover:ring-indigo-500"
-
 -- | hoverRingOffset2
 hoverRingOffset2 :: ClassName
 hoverRingOffset2 = ClassName "hover:ring-offset-2"
 
--- | hoverRingOffsetGreen400
-hoverRingOffsetGreen400 :: ClassName
-hoverRingOffsetGreen400 = ClassName "hover:ring-offset-green-400"
+-- | hoverUnderline
+hoverUnderline :: ClassName
+hoverUnderline = ClassName "hover:underline"
+
+-- | italic
+italic :: ClassName
+italic = ClassName "italic"
 
 -- | itemsCenter
 itemsCenter :: ClassName
@@ -171,6 +183,10 @@ justifyCenter = ClassName "justify-center"
 leadingNone :: ClassName
 leadingNone = ClassName "leading-none"
 
+-- | mb10
+mb10 :: ClassName
+mb10 = ClassName "mb-10"
+
 -- | mb2
 mb2 :: ClassName
 mb2 = ClassName "mb-2"
@@ -186,6 +202,10 @@ minHScreen = ClassName "min-h-screen"
 -- | mt2
 mt2 :: ClassName
 mt2 = ClassName "mt-2"
+
+-- | mt4
+mt4 :: ClassName
+mt4 = ClassName "mt-4"
 
 -- | mt6
 mt6 :: ClassName
@@ -203,6 +223,10 @@ mxAuto = ClassName "mx-auto"
 my2 :: ClassName
 my2 = ClassName "my-2"
 
+-- | p20
+p20 :: ClassName
+p20 = ClassName "p-20"
+
 -- | pb20
 pb20 :: ClassName
 pb20 = ClassName "pb-20"
@@ -210,6 +234,10 @@ pb20 = ClassName "pb-20"
 -- | placeholderGray400
 placeholderGray400 :: ClassName
 placeholderGray400 = ClassName "placeholder-gray-400"
+
+-- | px1
+px1 :: ClassName
+px1 = ClassName "px-1"
 
 -- | px2
 px2 :: ClassName
@@ -259,9 +287,17 @@ shadowMd = ClassName "shadow-md"
 text2xl :: ClassName
 text2xl = ClassName "text-2xl"
 
+-- | text3xl
+text3xl :: ClassName
+text3xl = ClassName "text-3xl"
+
 -- | text4xl
 text4xl :: ClassName
 text4xl = ClassName "text-4xl"
+
+-- | text5xl
+text5xl :: ClassName
+text5xl = ClassName "text-5xl"
 
 -- | text7xl
 text7xl :: ClassName
@@ -271,13 +307,17 @@ text7xl = ClassName "text-7xl"
 textBase :: ClassName
 textBase = ClassName "text-base"
 
+-- | textGray200
+textGray200 :: ClassName
+textGray200 = ClassName "text-gray-200"
+
 -- | textGray400
 textGray400 :: ClassName
 textGray400 = ClassName "text-gray-400"
 
--- | textGray500
-textGray500 :: ClassName
-textGray500 = ClassName "text-gray-500"
+-- | textGray600
+textGray600 :: ClassName
+textGray600 = ClassName "text-gray-600"
 
 -- | textGray700
 textGray700 :: ClassName
@@ -286,6 +326,10 @@ textGray700 = ClassName "text-gray-700"
 -- | textLg
 textLg :: ClassName
 textLg = ClassName "text-lg"
+
+-- | textRed600
+textRed600 :: ClassName
+textRed600 = ClassName "text-red-600"
 
 -- | textWhite
 textWhite :: ClassName

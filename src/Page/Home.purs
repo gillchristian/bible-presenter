@@ -2,19 +2,22 @@ module Bible.Page.Home where
 
 import Prelude
 
+import Bible.Capability.Navigate (class Navigate, navigate_)
+import Bible.Component.HTML.Layout as Layout
+import Bible.Component.HTML.Utils (safeHref)
+import Bible.Data.Route (Route(..))
+import Bible.Env (UserEnv)
 import Component.HOC.Connect as Connect
 import Control.Monad.Reader (class MonadAsk)
 import Data.Maybe (Maybe(..))
 import Effect.Aff.Class (class MonadAff)
 import Halogen as H
 import Halogen.HTML as HH
+import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
-import Bible.Capability.Navigate (class Navigate, navigate_)
-import Bible.Component.HTML.Layout as Layout
-import Bible.Data.Route (Route(..))
-import Bible.Env (UserEnv)
 import Tailwind as T
 import Web.Event.Event (Event)
+import Web.UIEvent.MouseEvent as MouseEvent
 
 data Action
   = Initialize
@@ -60,8 +63,18 @@ component = Connect.component $ H.mkComponent
           []
           [ HH.h1
               [ HP.classes [ T.textGray400, T.mb6, T.text4xl, T.fontBold ] ]
-              [ HH.text "Digital content consumption manager" ]
+              [ HH.text "Easily present Bible verses" ]
           , HH.p
               [ HP.classes [ T.textGray400, T.textLg ] ]
               [ HH.text "Keep your reading and watching lists under control with Listas" ]
+          , HH.p
+              [ HP.classes [ T.mt6 ] ]
+              [ HH.a
+                  [ safeHref Dashboard
+                  , HE.onClick \e -> Just $ Navigate Dashboard $ MouseEvent.toEvent e
+                  , HP.classes
+                      [ T.textGray600, T.textLg, T.hoverUnderline ]
+                  ]
+                  [ HH.text "Go to Dashboard" ]
+              ]
           ]

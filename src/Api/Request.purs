@@ -28,12 +28,13 @@ data RequestMethod
   | Delete
 
 type RequestOptions
-  = { endpoint :: Endpoint
+  = { baseUrl :: BaseURL
+    , endpoint :: Endpoint
     , method :: RequestMethod
     }
 
-defaultRequest :: BaseURL -> RequestOptions -> Request Json
-defaultRequest (BaseURL baseUrl) { endpoint, method } =
+defaultRequest :: RequestOptions -> Request Json
+defaultRequest { baseUrl: BaseURL baseUrl, endpoint, method } =
   { method: Left method
   , url: baseUrl <> print endpointCodec endpoint
   , content: RB.json <$> body
