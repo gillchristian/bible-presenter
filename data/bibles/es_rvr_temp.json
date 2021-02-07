@@ -1,0 +1,46 @@
+{
+  "gn": {
+    "name": "Genesis",
+    "abbrev": "gn",
+    "chapters": {
+      "1": {
+        "1": "En el principio crió Dios los cielos y la tierra.",
+        "2": "Y la tierra estaba desordenada y vacía, y las tinieblas estaban sobre la haz del abismo, y el Espíritu de Dios se movía sobre la haz de las aguas.",
+        "3": "Y dijo Dios: Sea la luz: y fué la luz.",
+        "4": "Y vió Dios que la luz era buena: y apartó Dios la luz de las tinieblas."
+      },
+      "2": {
+        "1": "Y fueron acabados los cielos y la tierra, y todo su ornamento.",
+        "2": "Y acabó Dios en el día séptimo su obra que hizo, y reposó el día séptimo de toda su obra que había hecho."
+      },
+      "50": {
+        "1": "Entonces se echó José sobre el rostro de su padre, y lloró sobre él, y besólo.",
+        "2": "Y mandó José á sus médicos familiares que embalsamasen á su padre: y los médicos embalsamaron á Israel.",
+        "3": "Y cumpliéronle cuarenta días, porque así cumplían los días de los embalsamados, y lloráronlo los Egipcios setenta días."
+      }
+    }
+  },
+  "ex": {
+    "name": "Exodus",
+    "abbrev": "ex",
+    "chapters": {
+      "1": {
+        "1": "Estos son los nombres de los hijos de Israel, que entraron en Egipto con Jacob; cada uno entró con su familia.",
+        "2": "Rubén, Simeón, Leví y Judá;",
+        "3": "Issachâr, Zabulón y Benjamín;"
+      },
+      "2": {
+        "1": "Un varón de la familia de Leví fué, y tomó por mujer una hija de Leví:",
+        "2": "La cual concibió, y parió un hijo: y viéndolo que era hermoso, túvole escondido tres meses.",
+        "3": "Pero no pudiendo ocultarle más tiempo, tomó una arquilla de juncos, y calafateóla con pez y betún, y colocó en ella al niño, y púsolo en un carrizal á la orilla del río:"
+      },
+      "3": {
+        "1": "Y apacentando Moisés las ovejas de Jethro su suegro, sacerdote de Madián, llevó las ovejas detrás del desierto, y vino á Horeb, monte de Dios.",
+        "2": "Y apareciósele el Angel de Jehová en una llama de fuego en medio de una zarza: y él miró, y vió que la zarza ardía en fuego, y la zarza no se consumía.",
+        "3": "Entonces Moisés dijo: Iré yo ahora, y veré esta grande visión, por qué causa la zarza no se quema.",
+        "4": "Y viendo Jehová que iba á ver, llamólo Dios de en medio de la zarza, y dijo: ¡Moisés, Moisés! Y él respondió: Heme aquí.",
+        "5": "Y dijo: No te llegues acá: quita tus zapatos de tus pies, porque el lugar en que tú estás, tierra santa es."
+      }
+    }
+  }
+}

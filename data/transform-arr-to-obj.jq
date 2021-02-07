@@ -15,4 +15,4 @@ reduce .[] as $book
         , chapters: $book.chapters | to_entries | chapters
         }
   )
- 
+
