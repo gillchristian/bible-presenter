@@ -6,6 +6,7 @@ import Bible.Api.Endpoint (Endpoint(..))
 import Bible.Api.Request (RequestMethod(..))
 import Bible.Api.Utils (decode_, mkRequest)
 import Bible.Capability.Clipboard (class Clipboard)
+import Bible.Capability.LocalStorage (class LocalStorage)
 import Bible.Capability.LogMessages (class LogMessages)
 import Bible.Capability.Navigate (class Navigate, locationState, navigate)
 import Bible.Capability.Now (class Now)
@@ -16,7 +17,12 @@ import Bible.Data.Route as Route
 import Bible.Env (Env, LogLevel(..))
 import Bible.Foreign.Clipboard as ForeignClipboard
 import Control.Monad.Reader.Trans (class MonadAsk, ReaderT, ask, asks, runReaderT)
+import Data.Argonaut.Core (stringify)
 import Data.Argonaut.Core as CA
+import Data.Argonaut.Decode (decodeJson)
+import Data.Argonaut.Encode (encodeJson)
+import Data.Argonaut.Parser (jsonParser)
+import Data.Either (hush)
 import Effect.Aff (Aff)
 import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class (class MonadEffect, liftEffect)
@@ -25,6 +31,9 @@ import Effect.Now as Now
 import Routing.Duplex (print)
 import Type.Equality (class TypeEquals, from)
 import Web.Event.Event (preventDefault)
+import Web.HTML (window)
+import Web.HTML.Window (localStorage)
+import Web.Storage.Storage as WStorage
 
 newtype AppM a
   = AppM (ReaderT Env Aff a)
@@ -51,6 +60,16 @@ instance nowAppM :: Now AppM where
   nowDate = liftEffect Now.nowDate
   nowTime = liftEffect Now.nowTime
   nowDateTime = liftEffect Now.nowDateTime
+
+instance localStorageAppM :: LocalStorage AppM where
+  getItem key = do
+    str <- liftEffect $ WStorage.getItem key =<< localStorage =<< window
+    pure $ (hush <<< decodeJson) =<< (hush <<< jsonParser) =<< str
+  setItem key a =
+    liftEffect $ WStorage.setItem key value =<< localStorage =<< window
+    where value = stringify $ encodeJson a
+  removeItem key =
+    liftEffect $ WStorage.removeItem key =<< localStorage =<< window
 
 instance logMessagesAppM :: LogMessages AppM where
   logMessage log = do

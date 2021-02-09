@@ -42,6 +42,7 @@ instance decodeJsonSlideContent :: DecodeJson SlideContent where
       _ -> Left $ AtKey "type" $ UnexpectedValue $ encodeJson type_
 
 type Slide
+  -- TODO: background support color
   = { background :: Maybe String
     , content :: SlideContent
     }

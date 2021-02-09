@@ -2,6 +2,7 @@ module Bible.Page.Dashboard where
 
 import Prelude
 
+import Bible.Capability.LocalStorage (class LocalStorage, getItem, removeItem, setItem)
 import Bible.Capability.Navigate (class Navigate, navigate_)
 import Bible.Capability.Resource.Bible (class ManageBible, downloadBible)
 import Bible.Component.HTML.Layout as Layout
@@ -20,11 +21,12 @@ import Data.Array as Array
 import Data.Either (note)
 import Data.FunctorWithIndex (mapWithIndex)
 import Data.Map as Map
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Natural (Natural, intToNat, natToInt)
 import Data.Slider (Slider(..))
 import Data.Slider as Slider
 import Data.String as String
+import Data.Traversable (for_)
 import Data.Tuple (snd)
 import Data.ZipperArray as ZipperArray
 import Effect.Aff.Class (class MonadAff)
@@ -44,13 +46,18 @@ data Action
   | Navigate Route Event
   | NewSlideContentChange String
   | AddSlide
-  | Start
-  | Next
-  | Prev
-  | GoToSlide Natural
   | ImgSelected String
   | ReceiveMsg ToCoordinator
   | SendMsg ToPresenter
+  | PersistSlides
+  | ClearSlides
+    -- Controls
+  | Start
+  | TogglePause
+  | Stop
+  | Next
+  | Prev
+  | GoToSlide Natural
     -- Verse Picker
   | PickerSelectBook Bible.Book
   | PickerSelectChapter Bible.Book Bible.Chapter Int
@@ -81,6 +88,9 @@ imgs =
   [ imgA
   , "https://images.unsplash.com/photo-1611030225755-3082ed97e11e?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1951&q=80"
   , "https://images.unsplash.com/photo-1611569689188-98d6173842c1?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80"
+  , "https://images.unsplash.com/photo-1588392382834-a891154bca4d?ixlib=rb-1.2.1&ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&auto=format&fit=crop&w=1355&q=80"
+  , "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1440&q=80"
+  , "https://images.unsplash.com/photo-1418065460487-3e41a6c84dc5?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80"
   ]
 
 component
@@ -89,6 +99,7 @@ component
   => MonadAsk { userEnv :: UserEnv | r } m
   => ManageBible m
   => Navigate m
+  => LocalStorage m
   => H.Component HH.HTML q {} o m
 component = Connect.component $ H.mkComponent
   { initialState
@@ -117,18 +128,20 @@ component = Connect.component $ H.mkComponent
         { source, channel } <- H.liftEffect $ Presentation.mkChannel "channel" ReceiveMsg
         void $ H.subscribe source
         H.modify_ _ { channel = Just channel }
+
       void $ H.fork do
         H.modify_ _ { bible = Loading }
         bible <- RemoteData.fromEither <$> note "Could not download Bible" <$> downloadBible "es_rvr_map.json"
         H.modify_ _ { bible = bible }
+      mbSlides <- getItem "slides"
+      for_ mbSlides $ \slides -> H.modify_ _ { slides = Inactive slides }
 
     ReceiveMsg GetState -> do
       {bgImage, slides} <- H.get
-      case slides of
-        Inactive _ ->
-          handleAction $ SendMsg $ SetSlide { background: Just bgImage, content: Still }
-        Active ss ->
-          handleAction $ SendMsg $ SetSlide $ ZipperArray.current ss
+      handleAction $ SendMsg $ SetSlide
+        $ case slides of
+            Active ss -> ZipperArray.current ss
+            _ -> { background: Just bgImage, content: Still }
 
     SendMsg msg -> do
       {channel} <- H.get
@@ -145,11 +158,9 @@ component = Connect.component $ H.mkComponent
       {newSlide, bgImage} <- H.get
       case newSlide of
         "" -> pure unit
-        contents ->
-          H.modify_ $ \s ->
-            s { newSlide = ""
-              , slides = Slider.snoc s.slides $ { background: Just bgImage, content: Text contents }
-              }
+        contents -> do
+          H.modify_ $ \s -> s { newSlide = "", slides = Slider.snoc s.slides $ { background: Just bgImage, content: Text contents } }
+          handleAction PersistSlides
 
     NewSlideContentChange contents ->
       H.modify_ _ { newSlide = contents }
@@ -158,53 +169,83 @@ component = Connect.component $ H.mkComponent
       H.modify_ _ { bgImage = img }
 
     -- TODO: lenses
+    TogglePause -> do
+      {slides, bgImage} <- H.get
+      case slides of
+        Inactive _ -> pure unit
+        Active as -> do
+          H.modify_ _ { slides = Paused as }
+          handleAction $ SendMsg $ SetSlide { background: Just bgImage, content: Still }
+        Paused as -> do
+          H.modify_ _ { slides = Active as }
+          handleAction $ SendMsg $ SetSlide $ ZipperArray.current as
+
+    -- TODO: lenses
+    Stop -> do
+      {slides} <- H.get
+      case slides of
+        Inactive _ -> pure unit
+        Active as -> H.modify_ _ { slides = Inactive $ ZipperArray.toArray as }
+        Paused as -> H.modify_ _ { slides = Inactive $ ZipperArray.toArray as }
+
+    -- TODO: lenses
     Start -> do
       {slides} <- H.get
       case slides of
-        Active _ -> pure unit
         Inactive as ->
           case ZipperArray.fromArray as of
             Nothing -> pure unit
             Just asZip -> do
                H.modify_ _ { slides = Active asZip }
                handleAction $ SendMsg $ SetSlide $ ZipperArray.current asZip
+        _ -> pure unit
 
     -- TODO: lenses
     GoToSlide n -> do
       {slides} <- H.get
       case slides of
         -- TODO: switch to active
-        Inactive _ -> pure unit
         Active as ->
           case ZipperArray.goIndex n as of
             Nothing -> pure unit
             Just updated -> do
               handleAction $ SendMsg $ SetSlide $ ZipperArray.current updated
               H.modify_ _ { slides = Active updated }
+        _ -> pure unit
 
     -- TODO: lenses
     Prev -> do
       {slides} <- H.get
       case slides of
-        Inactive _ -> pure unit
         Active as ->
           case ZipperArray.goPrev as of
             Nothing -> pure unit
             Just updated -> do
               handleAction $ SendMsg $ SetSlide $ ZipperArray.current updated
               H.modify_ _ { slides = Active updated }
+        _ -> pure unit
 
     -- TODO: lenses
     Next -> do
       {slides} <- H.get
       case slides of
-        Inactive _ -> pure unit
         Active as ->
           case ZipperArray.goNext as of
             Nothing -> pure unit
             Just updated -> do
               handleAction $ SendMsg $ SetSlide $ ZipperArray.current updated
               H.modify_ _ { slides = Active updated }
+        _ -> pure unit
+
+    ClearSlides -> do
+      {bgImage} <- H.get
+      H.modify_ _ { slides = Inactive [] }
+      removeItem "slides"
+      handleAction $ SendMsg $ SetSlide { background: Just bgImage, content: Still }
+
+    PersistSlides -> do
+      slides <- H.gets (Slider.toArray <<<_.slides)
+      setItem "slides" slides
 
     PickerSelectBook book ->
       H.modify_ _ { versePicker = SelectedBook book }
@@ -217,6 +258,7 @@ component = Connect.component $ H.mkComponent
       let content = Verse { book: book.name, chapter: n, verse: i, contents: verse }
           slide = { background: Just bgImage, content }
       H.modify_ $ \s -> s { versePicker = SelectedNone, slides = Slider.snoc s.slides slide }
+      handleAction PersistSlides
 
     PickerClearChapter book ->
       H.modify_ _ { versePicker = SelectedBook book }
@@ -275,12 +317,12 @@ component = Connect.component $ H.mkComponent
             , T.bgCenter
             , T.bgCover
             ]
-        , HP.prop (H.PropName "style") $ "background-image: url('" <> bgImage <> "');"
+        , HP.prop (H.PropName "style") $ "background-image: url('" <> fromMaybe imgA slide.background <> "');"
         ]
         [ case slide.content of
             Still -> HH.text ""
             Text str -> HH.div [] $ Slide.multiline str
-            Verse {book, chapter, verse} -> HH.text $ book <> " " <> show chapter <> ":" <> show verse
+            Verse {book, chapter, verse} -> Slide.highlight $ book <> " " <> show chapter <> ":" <> show verse
         ]
 
     restSlide :: Natural -> Int -> Slide -> _
@@ -304,12 +346,12 @@ component = Connect.component $ H.mkComponent
             , T.bgCenter
             , T.bgCover
             ]
-        , HP.prop (H.PropName "style") $ "background-image: url('" <> bgImage <> "');"
+        , HP.prop (H.PropName "style") $ "background-image: url('" <> fromMaybe imgA slide.background <> "');"
         ]
         [ case slide.content of
             Still -> HH.text ""
             Text str -> HH.div [] $ Slide.multiline str
-            Verse {book, chapter, verse} -> HH.text $ book <> " " <> show chapter <> ":" <> show verse
+            Verse {book, chapter, verse} -> Slide.highlight $ book <> " " <> show chapter <> ":" <> show verse
         ]
 
     imgEl img =
@@ -363,7 +405,7 @@ component = Connect.component $ H.mkComponent
             [ HP.classes [ T.textGray700, T.mt4 ] ]
             [ HH.text $ book.name <> " " <> show n ]
         , HH.div
-            [ HP.classes [ T.mt4, T.grid, T.gridCols6, T.gap2 ] ]
+            [ HP.classes [ T.mt4, T.grid, T.gridCols10, T.gap2 ] ]
             $ map snd
             $ Map.toUnfoldable
             $ mapWithIndex (verseButton book n chapter) chapter
@@ -377,7 +419,7 @@ component = Connect.component $ H.mkComponent
             [ HP.classes [ T.textGray700, T.mt4 ] ]
             [ HH.text book.name ]
         , HH.div
-            [ HP.classes [ T.mt4, T.grid, T.gridCols6, T.gap2 ] ]
+            [ HP.classes [ T.mt4, T.grid, T.gridCols10, T.gap2 ] ]
             $ map snd
             $ Map.toUnfoldable
             $ mapWithIndex (chapterButton book) book.chapters
@@ -422,30 +464,7 @@ component = Connect.component $ H.mkComponent
                     , HP.rows 5
                     , HP.placeholder "Something something interesting"
                     ]
-                , HH.button
-                    [ HP.type_ HP.ButtonButton
-                    , HE.onClick \_ -> Just AddSlide
-                    , HP.classes
-                        [ T.flex1
-                        , T.wFull
-                        , T.cursorPointer
-                        , T.disabledCursorNotAllowed
-                        , T.disabledBgGray300
-                        , T.py2
-                        , T.px4
-                        , T.bgGreen400
-                        , T.hoverBgGreen600
-                        , T.textWhite
-                        , T.roundedMd
-                        , T.shadowMd
-                        , T.focusOutlineNone
-                        , T.focusRing2
-                        , T.focusRingOffset2
-                        , T.focusRingGreen400
-                        ]
-                    , HP.disabled $ String.null newSlide
-                    ]
-                    [ HH.text "Add Slide" ]
+                , button "Add Slide" (String.null newSlide) $ Just AddSlide
                 , HH.div
                     [ HP.classes [ T.textGray700, T.mt8 ] ]
                     [ HH.text "Set background" ]
@@ -486,89 +505,39 @@ component = Connect.component $ H.mkComponent
             [ HH.div
                 [ HP.classes [ T.textGray700, T.textLg, T.mb2 ] ]
                 [ HH.text "Slides queue" ]
+            -- TODO better location
+            -- TODO button alert color
+            , HH.div
+                [ HP.classes [ T.mb2 ] ]
+                [ button "Clear slides" false $ Just ClearSlides ]
             , case slides of
                 Active as ->
                   HH.div
-                    [ HP.classes [ T.grid, T.gridCols2, T.gap4 ] ]
-                    [ HH.button
-                        [ HP.type_ HP.ButtonButton
-                        , HE.onClick \_ -> Just Prev
-                        , HP.classes
-                            [ T.flex1
-                            , T.wFull
-                            , T.cursorPointer
-                            , T.disabledCursorNotAllowed
-                            , T.disabledBgGray300
-                            , T.py2
-                            , T.px4
-                            , T.mb2
-                            , T.bgGreen400
-                            , T.hoverBgGreen600
-                            , T.textWhite
-                            , T.roundedMd
-                            , T.shadowMd
-                            , T.focusOutlineNone
-                            , T.focusRing2
-                            , T.focusRingOffset2
-                            , T.focusRingGreen400
-                            ]
-                        , HP.disabled $ ZipperArray.atStart as
-                        ]
-                        [ HH.text "Prev" ]
-                    , HH.button
-                        [ HP.type_ HP.ButtonButton
-                        , HE.onClick \_ -> Just Next
-                        , HP.classes
-                            [ T.flex1
-                            , T.wFull
-                            , T.cursorPointer
-                            , T.disabledCursorNotAllowed
-                            , T.disabledBgGray300
-                            , T.py2
-                            , T.px4
-                            , T.mb2
-                            , T.bgGreen400
-                            , T.hoverBgGreen600
-                            , T.textWhite
-                            , T.roundedMd
-                            , T.shadowMd
-                            , T.focusOutlineNone
-                            , T.focusRing2
-                            , T.focusRingOffset2
-                            , T.focusRingGreen400
-                            ]
-                        , HP.disabled $ ZipperArray.atEnd as
-                        ]
-                        [ HH.text "Next" ]
+                    [ HP.classes [ T.grid, T.gridCols4, T.gap4 ] ]
+                    [ HH.div [ HP.classes [ T.colSpan1 ] ] [ button "Prev" (ZipperArray.atStart as) $ Just Prev ]
+                    , HH.div [ HP.classes [ T.colSpan2 ] ] [ button "Pause" false $ Just TogglePause ]
+                    , HH.div [ HP.classes [ T.colSpan1 ] ] [ button "Next" (ZipperArray.atEnd as) $ Just Next ]
+                    , HH.div [ HP.classes [ T.colSpan4 ] ] [ button "Stop" false $ Just Stop ]
+                    ]
+                Paused as ->
+                  HH.div
+                    [ HP.classes [ T.grid, T.gridCols4, T.gap4 ] ]
+                    [ HH.div [ HP.classes [ T.colSpan1 ] ] [ button "Prev" true Nothing ]
+                    , HH.div [ HP.classes [ T.colSpan2 ] ] [ button "Resume" false $ Just TogglePause ]
+                    , HH.div [ HP.classes [ T.colSpan1 ] ] [ button "Next" true Nothing ]
+                    , HH.div [ HP.classes [ T.colSpan4 ] ] [ button "Stop" false $ Just Stop ]
                     ]
                 Inactive as ->
-                  HH.button
-                    [ HP.type_ HP.ButtonButton
-                    , HE.onClick \_ -> Just Start
-                    , HP.classes
-                        [ T.flex1
-                        , T.wFull
-                        , T.cursorPointer
-                        , T.disabledCursorNotAllowed
-                        , T.disabledBgGray300
-                        , T.py2
-                        , T.px4
-                        , T.mb2
-                        , T.bgGreen400
-                        , T.hoverBgGreen600
-                        , T.textWhite
-                        , T.roundedMd
-                        , T.shadowMd
-                        , T.focusOutlineNone
-                        , T.focusRing2
-                        , T.focusRingOffset2
-                        , T.focusRingGreen400
-                        ]
-                    , HP.disabled $ Array.null as
-                    ]
-                    [ HH.text "Start" ]
+                  button "Start" (Array.null as) $ Just Start
             , case slides of
                 Active slides' ->
+                  HH.div
+                    [ HP.classes [ T.mt6, T.flex, T.flexCol, T.gap4 ] ]
+                    $ Array.cons (curSlide (natToInt $ ZipperArray.curIndex slides') (ZipperArray.current slides'))
+                    $ flip Array.snoc (newSlideEl newSlide)
+                    $ mapWithIndex (restSlide $ ZipperArray.curIndex slides' + intToNat 1)
+                    $ ZipperArray.succ slides'
+                Paused slides' ->
                   HH.div
                     [ HP.classes [ T.mt6, T.flex, T.flexCol, T.gap4 ] ]
                     $ Array.cons (curSlide (natToInt $ ZipperArray.curIndex slides') (ZipperArray.current slides'))
@@ -582,3 +551,33 @@ component = Connect.component $ H.mkComponent
                     $ mapWithIndex (restSlide $ intToNat 0) as
             ]
         ]
+
+-- TODO move to components
+-- TODO support colors
+button :: forall i p. String -> Boolean -> Maybe p -> HH.HTML i p
+button text disabled action =
+  HH.button
+    [ HP.type_ HP.ButtonButton
+    , HE.onClick \_ -> action
+    , HP.classes
+        [ T.flex1
+        , T.wFull
+        , T.cursorPointer
+        , T.disabledCursorNotAllowed
+        , T.disabledBgGray300
+        , T.py2
+        , T.px4
+        , T.mb2
+        , T.bgGreen400
+        , T.hoverBgGreen600
+        , T.textWhite
+        , T.roundedMd
+        , T.shadowMd
+        , T.focusOutlineNone
+        , T.focusRing2
+        , T.focusRingOffset2
+        , T.focusRingGreen400
+        ]
+    , HP.disabled disabled
+    ]
+    [ HH.text text ]

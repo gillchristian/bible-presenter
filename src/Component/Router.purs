@@ -6,6 +6,7 @@ module Bible.Component.Router where
 import Prelude
 
 import Bible.Capability.Clipboard (class Clipboard)
+import Bible.Capability.LocalStorage (class LocalStorage)
 import Bible.Capability.LogMessages (class LogMessages)
 import Bible.Capability.Navigate (class Navigate, navigate, locationState)
 import Bible.Capability.Now (class Now)
@@ -50,6 +51,7 @@ component
    . MonadAff m
   => MonadAsk { userEnv :: UserEnv | r } m
   => Now m
+  => LocalStorage m
   => LogMessages m
   => Navigate m
   => Clipboard m

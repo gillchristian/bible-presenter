@@ -60,15 +60,16 @@ component = Connect.component $ H.mkComponent
     Initialize -> do
       { source, channel } <- H.liftEffect $ Presentation.mkChannel "channel" ReceiveMsg
       void $ H.subscribe source
-      handleAction $ SendMsg $ GetState
+      H.liftEffect $ channel.postMessage GetState
       H.modify_ _ { channel = Just channel }
 
-    ReceiveMsg (SetSlide content) -> H.modify_ _ { content = Just content }
+    ReceiveMsg (SetSlide content) ->
+      H.modify_ _ { content = Just content }
 
     SendMsg msg -> do
       { channel } <- H.get
       case channel of
-        Just { postMessage } ->  H.liftEffect $ postMessage msg
+        Just { postMessage } -> H.liftEffect $ postMessage msg
         Nothing -> pure unit
 
     Receive { currentUser } ->
@@ -78,4 +79,6 @@ component = Connect.component $ H.mkComponent
 
   render :: forall slots. State -> H.ComponentHTML Action slots m
   render { currentUser, content } =
-    maybe (Slide.slide { background: Just defaultImage, content: Still }) Slide.slide content
+    maybe fallback Slide.slide content
+    where
+    fallback = Slide.slide { background: Just defaultImage, content: Still }

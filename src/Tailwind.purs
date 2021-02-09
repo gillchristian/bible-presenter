@@ -31,6 +31,14 @@ bgGray300 = ClassName "bg-gray-300"
 bgGreen400 :: ClassName
 bgGreen400 = ClassName "bg-green-400"
 
+-- | bgOpacity75
+bgOpacity75 :: ClassName
+bgOpacity75 = ClassName "bg-opacity-75"
+
+-- | bgWhite
+bgWhite :: ClassName
+bgWhite = ClassName "bg-white"
+
 -- | border2
 border2 :: ClassName
 border2 = ClassName "border-2"
@@ -47,9 +55,17 @@ borderGray400 = ClassName "border-gray-400"
 borderNone :: ClassName
 borderNone = ClassName "border-none"
 
+-- | colSpan1
+colSpan1 :: ClassName
+colSpan1 = ClassName "col-span-1"
+
 -- | colSpan2
 colSpan2 :: ClassName
 colSpan2 = ClassName "col-span-2"
+
+-- | colSpan4
+colSpan4 :: ClassName
+colSpan4 = ClassName "col-span-4"
 
 -- | container
 container :: ClassName
@@ -123,9 +139,9 @@ gap4 = ClassName "gap-4"
 grid :: ClassName
 grid = ClassName "grid"
 
--- | gridCols2
-gridCols2 :: ClassName
-gridCols2 = ClassName "grid-cols-2"
+-- | gridCols10
+gridCols10 :: ClassName
+gridCols10 = ClassName "grid-cols-10"
 
 -- | gridCols3
 gridCols3 :: ClassName
@@ -163,10 +179,6 @@ hoverRingOffset2 = ClassName "hover:ring-offset-2"
 hoverUnderline :: ClassName
 hoverUnderline = ClassName "hover:underline"
 
--- | italic
-italic :: ClassName
-italic = ClassName "italic"
-
 -- | itemsCenter
 itemsCenter :: ClassName
 itemsCenter = ClassName "items-center"
@@ -182,6 +194,10 @@ justifyCenter = ClassName "justify-center"
 -- | leadingNone
 leadingNone :: ClassName
 leadingNone = ClassName "leading-none"
+
+-- | leadingNormal
+leadingNormal :: ClassName
+leadingNormal = ClassName "leading-normal"
 
 -- | mb10
 mb10 :: ClassName
@@ -223,10 +239,6 @@ mxAuto = ClassName "mx-auto"
 my2 :: ClassName
 my2 = ClassName "my-2"
 
--- | p20
-p20 :: ClassName
-p20 = ClassName "p-20"
-
 -- | pb20
 pb20 :: ClassName
 pb20 = ClassName "pb-20"
@@ -243,6 +255,10 @@ px1 = ClassName "px-1"
 px2 :: ClassName
 px2 = ClassName "px-2"
 
+-- | px40
+px40 :: ClassName
+px40 = ClassName "px-40"
+
 -- | px4
 px4 :: ClassName
 px4 = ClassName "px-4"
@@ -250,6 +266,10 @@ px4 = ClassName "px-4"
 -- | py12
 py12 :: ClassName
 py12 = ClassName "py-12"
+
+-- | py20
+py20 :: ClassName
+py20 = ClassName "py-20"
 
 -- | py2
 py2 :: ClassName
@@ -307,10 +327,6 @@ text7xl = ClassName "text-7xl"
 textBase :: ClassName
 textBase = ClassName "text-base"
 
--- | textGray200
-textGray200 :: ClassName
-textGray200 = ClassName "text-gray-200"
-
 -- | textGray400
 textGray400 :: ClassName
 textGray400 = ClassName "text-gray-400"
@@ -322,6 +338,10 @@ textGray600 = ClassName "text-gray-600"
 -- | textGray700
 textGray700 :: ClassName
 textGray700 = ClassName "text-gray-700"
+
+-- | textGray900
+textGray900 :: ClassName
+textGray900 = ClassName "text-gray-900"
 
 -- | textLg
 textLg :: ClassName
