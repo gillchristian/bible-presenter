@@ -5,8 +5,11 @@ import Prelude
 import Bible.Capability.LocalStorage (class LocalStorage, getItem, removeItem, setItem)
 import Bible.Capability.Navigate (class Navigate, navigate_)
 import Bible.Capability.Resource.Bible (class ManageBible, downloadBible)
+import Bible.Component.HTML.Breadcrumbs as Breadcrumbs
+import Bible.Component.HTML.Icons as Icons
 import Bible.Component.HTML.Layout as Layout
 import Bible.Component.HTML.Slide as Slide
+import Bible.Component.HTML.Tabs (tabs)
 import Bible.Component.HTML.Utils (cx)
 import Bible.Data.Bible (Bible)
 import Bible.Data.Bible as Bible
@@ -18,6 +21,7 @@ import Bible.Env (UserEnv)
 import Component.HOC.Connect as Connect
 import Control.Monad.Reader (class MonadAsk)
 import Data.Array as Array
+import Data.Array.NonEmpty (cons')
 import Data.Either (note)
 import Data.FunctorWithIndex (mapWithIndex)
 import Data.Map as Map
@@ -39,6 +43,13 @@ import Network.RemoteData as RemoteData
 import Tailwind as T
 import Web.Event.Event (Event)
 import Web.UIEvent.KeyboardEvent as KE
+
+data Tab
+  = TabBible
+  | TabText
+  | TabBg
+
+derive instance eqTab :: Eq Tab
 
 data Action
   = Initialize
@@ -64,6 +75,8 @@ data Action
   | PickerSelectVerse Bible.Book Bible.Chapter Int String Int -- ???
   | PickerClearChapter Bible.Book
   | PickerClear
+    -- Tabs
+  | ToggleTab Tab
 
 data VersePicker
   = SelectedNone
@@ -78,6 +91,7 @@ type State
     , channel :: Maybe (Presentation.Channel ToPresenter)
     , bible :: RemoteData String Bible
     , versePicker :: VersePicker
+    , activeTab :: Tab
     }
 
 imgA :: String
@@ -92,6 +106,9 @@ imgs =
   , "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1440&q=80"
   , "https://images.unsplash.com/photo-1418065460487-3e41a6c84dc5?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80"
   ]
+
+bibleBreadcrumbs :: forall i p. Breadcrumbs.Crumb p -> Array (Breadcrumbs.Crumb p) -> HH.HTML i p
+bibleBreadcrumbs = Breadcrumbs.breadcrumbs Icons.openBook
 
 component
   :: forall q o m r
@@ -119,6 +136,7 @@ component = Connect.component $ H.mkComponent
     , channel: Nothing
     , bible: NotAsked
     , versePicker: SelectedNone
+    , activeTab: TabBible
     }
 
   handleAction :: forall slots. Action -> H.HalogenM State Action slots o m Unit
@@ -257,7 +275,7 @@ component = Connect.component $ H.mkComponent
       {bgImage} <- H.get
       let content = Verse { book: book.name, chapter: n, verse: i, contents: verse }
           slide = { background: Just bgImage, content }
-      H.modify_ $ \s -> s { versePicker = SelectedNone, slides = Slider.snoc s.slides slide }
+      H.modify_ $ \s -> s { slides = Slider.snoc s.slides slide }
       handleAction PersistSlides
 
     PickerClearChapter book ->
@@ -266,8 +284,11 @@ component = Connect.component $ H.mkComponent
     PickerClear ->
       H.modify_ _ { versePicker = SelectedNone }
 
+    ToggleTab tab ->
+      H.modify_ _ { activeTab = tab }
+
   render :: forall slots. State -> H.ComponentHTML Action slots m
-  render { currentUser, newSlide, slides, bgImage, bible, versePicker } =
+  render { activeTab, currentUser, newSlide, slides, bgImage, bible, versePicker } =
     Layout.dashboard currentUser Navigate (Just Dashboard) content
 
     where
@@ -401,9 +422,11 @@ component = Connect.component $ H.mkComponent
     chapterEl book chapter n =
       HH.div
         [ HP.classes [ T.mt4 ] ]
-        [ HH.div
-            [ HP.classes [ T.textGray700, T.mt4 ] ]
-            [ HH.text $ book.name <> " " <> show n ]
+        [ bibleBreadcrumbs
+            { action: Just PickerClear, label: "Bible" }
+            [ { action: Just $ PickerClearChapter book, label:  book.name }
+            , { action: Nothing, label:  show n }
+            ]
         , HH.div
             [ HP.classes [ T.mt4, T.grid, T.gridCols10, T.gap2 ] ]
             $ map snd
@@ -415,9 +438,9 @@ component = Connect.component $ H.mkComponent
     bookEl book =
       HH.div
         [ HP.classes [ T.mt4 ] ]
-        [ HH.div
-            [ HP.classes [ T.textGray700, T.mt4 ] ]
-            [ HH.text book.name ]
+        [ bibleBreadcrumbs
+            { action: Just PickerClear, label: "Bible" }
+            [ { action: Nothing, label:  book.name } ]
         , HH.div
             [ HP.classes [ T.mt4, T.grid, T.gridCols10, T.gap2 ] ]
             $ map snd
@@ -432,72 +455,86 @@ component = Connect.component $ H.mkComponent
             [ HP.classes [ T.colSpan2 ] ]
             [ HH.div
                 []
-                [ HH.label
-                    [ HP.classes [ T.textGray700, T.textLg ] ]
-                    [ HH.text "Slide content" ]
-                , HH.textarea
-                    [ HP.value newSlide
-                    , HE.onKeyDown \e ->
-                        case KE.key e of
-                          "Enter" | KE.ctrlKey e || KE.metaKey e -> Just AddSlide
-                          _ -> Nothing
-                    , HE.onValueInput $ Just <<< NewSlideContentChange
-                    , HP.classes
-                        [ T.appearanceNone
-                        , T.borderNone
-                        , T.wFull
-                        , T.my2
-                        , T.py2
-                        , T.px4
-                        , T.bgGray200
-                        , T.textGray700
-                        , T.placeholderGray400
-                        , T.roundedMd
-                        , T.shadowMd
-                        , T.textBase
-                        , T.focusBgWhite
-                        , T.focusOutlineNone
-                        , T.focusRing2
-                        , T.focusRingOffset2
-                        , T.focusRingGreen400
+                [ tabs
+                    $ cons'
+                        { active: TabBible == activeTab, action: Just $ ToggleTab TabBible, label: "Bible verse slide" }
+                    $ [ { active: TabText == activeTab, action: Just $ ToggleTab TabText, label: "Text slide" }
+                      , { active: TabBg == activeTab, action: Just $ ToggleTab TabBg, label: "Background" }
+                      ]
+                , case activeTab of
+                    TabBible ->
+                      HH.div
+                        [ HP.classes [ T.mt8 ] ]
+                        [ case bible of
+                            NotAsked -> HH.text ""
+                            Loading ->
+                              HH.div
+                                [ HP.classes [ T.textGray700, T.mt4 ] ]
+                                [ HH.text "..." ]
+                            Success b ->
+                              case versePicker of
+                                SelectedNone ->
+                                  HH.div
+                                    [ HP.classes [ T.mt4 ] ]
+                                    [ bibleBreadcrumbs { action: Nothing, label: "Bible" } []
+                                    , HH.div
+                                        [ HP.classes [ T.textGray700, T.mt4, T.grid, T.gridCols6, T.gap2 ] ]
+                                        $ map  bookButton b
+                                    ]
+                                SelectedBook book ->
+                                  HH.div
+                                    [ HP.classes [ T.mt4 ] ]
+                                    [ bookEl book ]
+                                SelectedChapter book chapter n ->
+                                  HH.div
+                                    [ HP.classes [ T.mt4 ] ]
+                                    [ chapterEl book chapter n ]
+                            Failure msg ->
+                              HH.div
+                                [ HP.classes [ T.textRed600, T.mt4 ] ]
+                                [ HH.text msg ]
                         ]
-                    , HP.rows 5
-                    , HP.placeholder "Something something interesting"
-                    ]
-                , button "Add Slide" (String.null newSlide) $ Just AddSlide
-                , HH.div
-                    [ HP.classes [ T.textGray700, T.mt8 ] ]
-                    [ HH.text "Set background" ]
-                , HH.div
-                    [ HP.classes [ T.grid, T.gridCols4, T.gap4, T.mt2 ] ]
-                    $ map imgEl imgs
-                , HH.div
-                    [ HP.classes [ T.textGray700, T.textLg, T.mt8 ] ]
-                    [ HH.text "Chose a Bible verse" ]
-                , case bible of
-                    NotAsked -> HH.text ""
-                    Loading ->
+                    TabText ->
                       HH.div
-                        [ HP.classes [ T.textGray700, T.mt4 ] ]
-                        [ HH.text "..." ]
-                    Success b ->
-                      case versePicker of
-                        SelectedNone ->
-                          HH.div
-                            [ HP.classes [ T.textGray700, T.mt4, T.grid, T.gridCols6, T.gap2 ] ]
-                            $ map  bookButton b
-                        SelectedBook book ->
-                          HH.div
-                            [ HP.classes [ T.mt4 ] ]
-                            [ bookEl book ]
-                        SelectedChapter book chapter n ->
-                          HH.div
-                            [ HP.classes [ T.mt4 ] ]
-                            [ chapterEl book chapter n ]
-                    Failure msg ->
+                        [ HP.classes [ T.mt8 ] ]
+                        [ HH.textarea
+                            [ HP.value newSlide
+                            , HE.onKeyDown \e ->
+                                case KE.key e of
+                                  "Enter" | KE.ctrlKey e || KE.metaKey e -> Just AddSlide
+                                  _ -> Nothing
+                            , HE.onValueInput $ Just <<< NewSlideContentChange
+                            , HP.classes
+                                [ T.appearanceNone
+                                , T.borderNone
+                                , T.wFull
+                                , T.my2
+                                , T.py2
+                                , T.px4
+                                , T.bgGray200
+                                , T.textGray700
+                                , T.placeholderGray400
+                                , T.roundedMd
+                                , T.shadowMd
+                                , T.textBase
+                                , T.focusBgWhite
+                                , T.focusOutlineNone
+                                , T.focusRing2
+                                , T.focusRingOffset2
+                                , T.focusRingGreen400
+                                ]
+                            , HP.rows 5
+                            , HP.placeholder "Something something interesting"
+                            ]
+                        , button "Add Slide" (String.null newSlide) $ Just AddSlide
+                        ]
+                    TabBg ->
                       HH.div
-                        [ HP.classes [ T.textRed600, T.mt4 ] ]
-                        [ HH.text msg ]
+                        [ HP.classes [ T.mt8 ] ]
+                        [ HH.div
+                            [ HP.classes [ T.grid, T.gridCols4, T.gap4, T.mt2 ] ]
+                            $ map imgEl imgs
+                        ]
                 ]
             ]
         , HH.div
@@ -509,7 +546,7 @@ component = Connect.component $ H.mkComponent
             -- TODO button alert color
             , HH.div
                 [ HP.classes [ T.mb2 ] ]
-                [ button "Clear slides" false $ Just ClearSlides ]
+                [ button "Clear slides" (Slider.null slides) $ Just ClearSlides ]
             , case slides of
                 Active as ->
                   HH.div
