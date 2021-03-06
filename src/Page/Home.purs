@@ -17,7 +17,7 @@ import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
 import Tailwind as T
 import Web.Event.Event (Event)
-import Web.UIEvent.MouseEvent as MouseEvent
+import Web.UIEvent.MouseEvent (toEvent)
 
 data Action
   = Initialize
@@ -55,36 +55,53 @@ component = Connect.component $ H.mkComponent
 
   render :: forall slots. State -> H.ComponentHTML Action slots m
   render { currentUser } =
-    Layout.dashboard
-      currentUser
-      Navigate
-      (Just Home)
-      $ HH.div
-          []
-          [ HH.h1
-              [ HP.classes [ T.textGray400, T.mb6, T.text4xl, T.fontBold ] ]
-              [ HH.text "Easily present Bible verses" ]
-          , HH.p
-              [ HP.classes [ T.textGray400, T.textLg ] ]
-              [ HH.text "Keep your reading and watching lists under control with Listas" ]
-          , HH.p
-              [ HP.classes [ T.mt6 ] ]
-              [ HH.a
-                  [ safeHref Dashboard
-                  , HE.onClick \e -> Just $ Navigate Dashboard $ MouseEvent.toEvent e
-                  , HP.classes
-                      [ T.textGray600, T.textLg, T.hoverUnderline ]
-                  ]
-                  [ HH.text "Go to Dashboard" ]
-              ]
-          , HH.p
-              [ HP.classes [ T.mt6 ] ]
-              [ HH.a
-                  [ safeHref Dashboard
-                  , HE.onClick \e -> Just $ Navigate Presenter $ MouseEvent.toEvent e
-                  , HP.classes
-                      [ T.textGray600, T.textLg, T.hoverUnderline ]
-                  ]
-                  [ HH.text "Go to Presenter" ]
-              ]
-          ]
+    Layout.dashboard Nothing Navigate (Just Home) content
+    where
+    content =
+      HH.div
+        [ HP.classes
+            [ T.maxW2xl
+            , T.mxAuto
+            , T.textCenter
+            , T.py16
+            , T.px4
+            , T.smPy20
+            , T.smPx6
+            , T.lgPx8
+            ]
+        ]
+        [ HH.h2
+            [ HP.classes [ T.text3xl, T.fontExtrabold, T.textIndigo600, T.smText4xl ] ]
+            [ HH.span
+                [ HP.classes [ T.block ] ]
+                [ HH.text "Present Bible verses on the fly." ]
+            ]
+        , HH.p
+            [ HP.classes [ T.mt4, T.textLg, T.leading6, T.textGray600 ] ]
+            [ HH.text "Ac euismod vel sit maecenas id pellentesque eu sed consectetur. Malesuada adipiscing sagittis vel nulla nec." ]
+        , HH.a
+            [ HP.classes
+                [ T.mt8
+                , T.wFull
+                , T.inlineFlex
+                , T.itemsCenter
+                , T.justifyCenter
+                , T.px5
+                , T.py3
+                , T.border2
+                , T.borderTransparent
+                , T.textBase
+                , T.fontMedium
+                , T.roundedMd
+                , T.textWhite
+                , T.bgIndigo600
+                , T.hoverBgWhite
+                , T.hoverTextIndigo600
+                , T.hoverBorderIndigo600
+                , T.smWAuto
+                ]
+            , safeHref Dashboard
+            , HE.onClick $ Just <<< Navigate Dashboard <<< toEvent
+            ]
+            [ HH.text "Start presenting" ]
+        ]

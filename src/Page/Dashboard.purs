@@ -302,10 +302,13 @@ component = Connect.component $ H.mkComponent
 
   render :: forall slots. State -> H.ComponentHTML Action slots m
   render { activeTab, currentUser, newSlide, slides, bgImage, bible, versePicker } =
-    Layout.dashboard currentUser Navigate (Just Dashboard) content
+    Layout.dashboard
+      (Just "Dashboard")
+      Navigate
+      (Just Dashboard)
+      content
 
     where
-
     newSlideEl "" = HH.text ""
     newSlideEl contents =
       -- TODO: better _new slide_ styles
@@ -461,6 +464,52 @@ component = Connect.component $ H.mkComponent
             $ mapWithIndex (chapterButton book) book.chapters
         ]
 
+    slidesHeadEl =
+      HH.div
+        [ HP.classes
+            [ T.flex
+            , T.itemsCenter
+            , T.justifyBetween
+            , T.pt4
+            , T.pb2
+            , T.mb2
+            , T.borderB
+            , T.borderGray200
+            ]
+        ]
+        [ HH.h3
+            [ HP.classes [ T.textLg, T.leading6, T.fontMedium, T.textGray600 ] ]
+            [ HH.text "Slides" ]
+        , HH.div
+            [ HP.classes [ T.ml4, T.flexShrink0 ] ]
+            [ HH.button
+                [ HP.classes
+                    [ T.inlineFlex
+                    , T.itemsCenter
+                    , T.justifyCenter
+                    , T.px4
+                    , T.py2
+                    , T.border
+                    , T.borderTransparent
+                    , T.fontMedium
+                    , T.roundedMd
+                    , T.textRed700
+                    , T.bgRed100
+                    , T.hoverBgRed200
+                    , T.focusOutlineNone
+                    , T.focusRing2
+                    , T.focusRingOffset2
+                    , T.focusRingRed500
+                    , T.smTextSm
+                    ]
+                , HP.type_ HP.ButtonButton
+                , HE.onClick \_ -> Just ClearSlides -- TODO: nothing on disabled
+                , HP.disabled $ Slider.null slides
+                ]
+                [ HH.text "Clear slides" ]
+            ]
+        ]
+
     content =
       HH.div
         [ HP.classes [ T.grid, T.gridCols3, T.gap4 ] ]
@@ -539,7 +588,7 @@ component = Connect.component $ H.mkComponent
                             , HP.rows 5
                             , HP.placeholder "Something something interesting"
                             ]
-                        , button "Add Slide" (String.null newSlide) $ Just AddSlide
+                        , button (HH.text "Add Slide") (String.null newSlide) $ Just AddSlide
                         ]
                     TabBg ->
                       HH.div
@@ -552,33 +601,28 @@ component = Connect.component $ H.mkComponent
             ]
         , HH.div
             []
-            [ HH.div
-                [ HP.classes [ T.textGray700, T.textLg, T.mb2 ] ]
-                [ HH.text "Slides queue" ]
-            -- TODO better location
-            -- TODO button alert color
-            , HH.div
-                [ HP.classes [ T.mb2 ] ]
-                [ button "Clear slides" (Slider.null slides) $ Just ClearSlides ]
-            , case slides of
+            [ slidesHeadEl
+            ,case slides of
                 Active as ->
                   HH.div
-                    [ HP.classes [ T.grid, T.gridCols4, T.gap4 ] ]
-                    [ HH.div [ HP.classes [ T.colSpan1 ] ] [ button "Prev" (ZipperArray.atStart as) $ Just Prev ]
-                    , HH.div [ HP.classes [ T.colSpan2 ] ] [ button "Pause" false $ Just TogglePause ]
-                    , HH.div [ HP.classes [ T.colSpan1 ] ] [ button "Next" (ZipperArray.atEnd as) $ Just Next ]
-                    , HH.div [ HP.classes [ T.colSpan4 ] ] [ button "Stop" false $ Just Stop ]
+                    [ HP.classes [ T.flex, T.justifyBetween, T.itemsCenter ] ]
+                    [ playerButton Icons.stop false $ Just Stop
+                    , playerButton Icons.prev (ZipperArray.atStart as) $ Just Prev
+                    , playerButton Icons.pause false $ Just TogglePause
+                    , playerButton Icons.next (ZipperArray.atEnd as) $ Just Next
                     ]
                 Paused as ->
                   HH.div
-                    [ HP.classes [ T.grid, T.gridCols4, T.gap4 ] ]
-                    [ HH.div [ HP.classes [ T.colSpan1 ] ] [ button "Prev" true Nothing ]
-                    , HH.div [ HP.classes [ T.colSpan2 ] ] [ button "Resume" false $ Just TogglePause ]
-                    , HH.div [ HP.classes [ T.colSpan1 ] ] [ button "Next" true Nothing ]
-                    , HH.div [ HP.classes [ T.colSpan4 ] ] [ button "Stop" false $ Just Stop ]
+                    [ HP.classes [ T.flex, T.justifyBetween, T.itemsCenter ] ]
+                    [ playerButton Icons.stop false $ Just Stop
+                    , playerButton Icons.prev true Nothing
+                    , playerButton Icons.play false $ Just TogglePause
+                    , playerButton Icons.next true Nothing
                     ]
                 Inactive as ->
-                  button "Start" (Array.null as) $ Just Start
+                  HH.div
+                    [ HP.classes [ T.flex ] ]
+                    [ playerButton Icons.play (Array.null as) $ Just Start ]
             , case slides of
                 Active slides' ->
                   HH.div
@@ -602,10 +646,27 @@ component = Connect.component $ H.mkComponent
             ]
         ]
 
+playerButton :: forall i p. Icons.Icon -> Boolean -> Maybe p -> HH.HTML i p
+playerButton icon disabled action =
+  HH.button
+    [ HP.type_ HP.ButtonButton
+    , HE.onClick \_ -> action
+    , HP.classes
+        [ T.disabledCursorNotAllowed
+        , T.disabledTextGray300
+        , T.textGray600
+        , T.focusOutlineNone
+        , T.cursorPointer
+        ]
+    , HP.disabled disabled
+    ]
+    [ icon [ Icons.classes [ T.h10, T.w10 ] ]
+    ]
+
 -- TODO move to components
 -- TODO support colors
-button :: forall i p. String -> Boolean -> Maybe p -> HH.HTML i p
-button text disabled action =
+button :: forall i p. HH.HTML i p -> Boolean -> Maybe p -> HH.HTML i p
+button label disabled action =
   HH.button
     [ HP.type_ HP.ButtonButton
     , HE.onClick \_ -> action
@@ -630,4 +691,4 @@ button text disabled action =
         ]
     , HP.disabled disabled
     ]
-    [ HH.text text ]
+    [ label ]
