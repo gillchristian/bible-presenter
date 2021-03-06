@@ -143,10 +143,6 @@ flexGrow = ClassName "flex-grow"
 flexShrink0 :: ClassName
 flexShrink0 = ClassName "flex-shrink-0"
 
--- | flexWrap
-flexWrap :: ClassName
-flexWrap = ClassName "flex-wrap"
-
 -- | focusBgWhite
 focusBgWhite :: ClassName
 focusBgWhite = ClassName "focus:bg-white"
@@ -283,10 +279,6 @@ hoverTextGray700 = ClassName "hover:text-gray-700"
 hoverTextIndigo600 :: ClassName
 hoverTextIndigo600 = ClassName "hover:text-indigo-600"
 
--- | hoverUnderline
-hoverUnderline :: ClassName
-hoverUnderline = ClassName "hover:underline"
-
 -- | inlineFlex
 inlineFlex :: ClassName
 inlineFlex = ClassName "inline-flex"
@@ -306,10 +298,6 @@ justifyCenter = ClassName "justify-center"
 -- | leading6
 leading6 :: ClassName
 leading6 = ClassName "leading-6"
-
--- | leadingNone
-leadingNone :: ClassName
-leadingNone = ClassName "leading-none"
 
 -- | leadingNormal
 leadingNormal :: ClassName
@@ -367,10 +355,6 @@ mb10 = ClassName "mb-10"
 mb2 :: ClassName
 mb2 = ClassName "mb-2"
 
--- | mb6
-mb6 :: ClassName
-mb6 = ClassName "mb-6"
-
 -- | minHScreen
 minHScreen :: ClassName
 minHScreen = ClassName "min-h-screen"
@@ -414,10 +398,6 @@ negMt32 = ClassName "-mt-32"
 -- | pb12
 pb12 :: ClassName
 pb12 = ClassName "pb-12"
-
--- | pb20
-pb20 :: ClassName
-pb20 = ClassName "pb-20"
 
 -- | pb2
 pb2 :: ClassName
@@ -567,17 +547,9 @@ spaceX4 = ClassName "space-x-4"
 spaceY1 :: ClassName
 spaceY1 = ClassName "space-y-1"
 
--- | text2xl
-text2xl :: ClassName
-text2xl = ClassName "text-2xl"
-
 -- | text3xl
 text3xl :: ClassName
 text3xl = ClassName "text-3xl"
-
--- | text4xl
-text4xl :: ClassName
-text4xl = ClassName "text-4xl"
 
 -- | text5xl
 text5xl :: ClassName
