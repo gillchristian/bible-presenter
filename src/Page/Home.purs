@@ -77,4 +77,14 @@ component = Connect.component $ H.mkComponent
                   ]
                   [ HH.text "Go to Dashboard" ]
               ]
+          , HH.p
+              [ HP.classes [ T.mt6 ] ]
+              [ HH.a
+                  [ safeHref Dashboard
+                  , HE.onClick \e -> Just $ Navigate Presenter $ MouseEvent.toEvent e
+                  , HP.classes
+                      [ T.textGray600, T.textLg, T.hoverUnderline ]
+                  ]
+                  [ HH.text "Go to Presenter" ]
+              ]
           ]
