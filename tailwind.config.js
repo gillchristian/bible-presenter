@@ -12,6 +12,7 @@ module.exports = {
       ringOffsetColor: ["hover"],
       ringOffsetWidth: ["hover"],
       ringWidth: ["hover"],
+      textColor: ["disabled"]
     },
   },
   plugins: [
