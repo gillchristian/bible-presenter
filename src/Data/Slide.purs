@@ -8,10 +8,17 @@ import Data.Argonaut.Encode (class EncodeJson, encodeJson, (:=), (~>))
 import Data.Either (Either(..))
 import Data.Maybe (Maybe)
 
+type VerseSpec
+  = { book :: String
+    , chapter :: Int
+    , verse :: Int
+    , contents :: String
+    }
+
 data SlideContent
   = Still
   | Text String
-  | Verse { book :: String, chapter :: Int, verse :: Int, contents :: String }
+  | Verse VerseSpec
 
 instance encodeJsonSlideContent :: EncodeJson SlideContent where
   encodeJson Still =

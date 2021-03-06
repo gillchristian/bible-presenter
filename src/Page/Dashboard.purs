@@ -165,7 +165,11 @@ component = Connect.component $ H.mkComponent
         bible <- RemoteData.fromEither <$> note "Could not download Bible" <$> downloadBible "es_rvr_map.json"
         H.modify_ _ { bible = bible }
       mbSlides <- getItem "slides"
-      for_ mbSlides $ \slides -> H.modify_ _ { slides = Inactive slides }
+      for_ mbSlides $ \slides -> do
+        {bgImage} <- H.get
+        let newBgImage = fromMaybe bgImage $ _.background =<< Array.head slides
+        H.modify_ _ { slides = Inactive slides, bgImage = newBgImage }
+        handleAction $ SendMsg $ SetSlide { background: Just newBgImage, content: Still }
 
     ReceiveMsg GetState -> do
       {bgImage, slides} <- H.get
@@ -213,11 +217,12 @@ component = Connect.component $ H.mkComponent
 
     -- TODO: lenses
     Stop -> do
-      {slides} <- H.get
+      {slides, bgImage} <- H.get
       case slides of
         Inactive _ -> pure unit
         Active as -> H.modify_ _ { slides = Inactive $ ZipperArray.toArray as }
         Paused as -> H.modify_ _ { slides = Inactive $ ZipperArray.toArray as }
+      handleAction $ SendMsg $ SetSlide { background: Just bgImage, content: Still }
 
     -- TODO: lenses
     Start -> do
