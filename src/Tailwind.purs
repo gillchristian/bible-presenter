@@ -39,6 +39,10 @@ bgIndigo600 = ClassName "bg-indigo-600"
 bgIndigo700 :: ClassName
 bgIndigo700 = ClassName "bg-indigo-700"
 
+-- | bgOpacity50
+bgOpacity50 :: ClassName
+bgOpacity50 = ClassName "bg-opacity-50"
+
 -- | bgOpacity75
 bgOpacity75 :: ClassName
 bgOpacity75 = ClassName "bg-opacity-75"
@@ -99,6 +103,10 @@ borderOpacity25 = ClassName "border-opacity-25"
 borderTransparent :: ClassName
 borderTransparent = ClassName "border-transparent"
 
+-- | bottom4
+bottom4 :: ClassName
+bottom4 = ClassName "bottom-4"
+
 -- | colSpan2
 colSpan2 :: ClassName
 colSpan2 = ClassName "col-span-2"
@@ -122,6 +130,10 @@ disabledCursorNotAllowed = ClassName "disabled:cursor-not-allowed"
 -- | disabledTextGray300
 disabledTextGray300 :: ClassName
 disabledTextGray300 = ClassName "disabled:text-gray-300"
+
+-- | fixed
+fixed :: ClassName
+fixed = ClassName "fixed"
 
 -- | flex1
 flex1 :: ClassName
@@ -395,6 +407,10 @@ negMbPx = ClassName "-mb-px"
 negMt32 :: ClassName
 negMt32 = ClassName "-mt-32"
 
+-- | p1
+p1 :: ClassName
+p1 = ClassName "p-1"
+
 -- | pb12
 pb12 :: ClassName
 pb12 = ClassName "pb-12"
@@ -482,6 +498,10 @@ py6 = ClassName "py-6"
 -- | relative
 relative :: ClassName
 relative = ClassName "relative"
+
+-- | right4
+right4 :: ClassName
+right4 = ClassName "right-4"
 
 -- | ring2
 ring2 :: ClassName
@@ -630,4 +650,8 @@ wFull = ClassName "w-full"
 -- | wScreen
 wScreen :: ClassName
 wScreen = ClassName "w-screen"
+
+-- | z10
+z10 :: ClassName
+z10 = ClassName "z-10"
 
