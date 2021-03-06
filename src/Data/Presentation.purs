@@ -4,10 +4,11 @@ import Prelude
 
 import Bible.Data.Slide (Slide)
 import Bible.Foreign.BroadcastChannel as BroadcastChannel
-import Data.Argonaut.Core (jsonEmptyObject)
-import Data.Argonaut.Decode (class DecodeJson, JsonDecodeError(..), decodeJson, (.:))
-import Data.Argonaut.Encode (class EncodeJson, encodeJson, (:=), (~>))
-import Data.Either (Either(..))
+import Data.Argonaut.Decode (class DecodeJson, decodeJson)
+import Data.Argonaut.Decode.Generic.Rep (genericDecodeJson)
+import Data.Argonaut.Encode (class EncodeJson, encodeJson)
+import Data.Argonaut.Encode.Generic.Rep (genericEncodeJson)
+import Data.Generic.Rep (class Generic)
 import Data.Traversable (for_)
 import Effect (Effect)
 import Effect.Aff.Class (class MonadAff)
@@ -20,22 +21,13 @@ import Halogen.Query.EventSource as HES
 data ToPresenter
   = SetSlide Slide
 
+derive instance genericToPresenter :: Generic ToPresenter _
+
 instance encodeJsonToPresenter :: EncodeJson ToPresenter where
-  encodeJson (SetSlide slide) =
-    "type" := "SetSlide"
-      ~> "value" := slide
-      ~> jsonEmptyObject
+  encodeJson = genericEncodeJson
 
 instance decodeJsonToPresenter :: DecodeJson ToPresenter where
-  decodeJson json = do
-    obj <- decodeJson json
-    type_ <- obj .: "type"
-
-    case type_ of
-      "SetSlide" -> do
-        value <- obj .: "value"
-        Right $ SetSlide value
-      _ -> Left $ AtKey "type" $ UnexpectedValue $ encodeJson type_
+  decodeJson = genericDecodeJson
 
 --------------------------------------------------------------------------------
 -- Coordinator -----------------------------------------------------------------
@@ -44,19 +36,13 @@ instance decodeJsonToPresenter :: DecodeJson ToPresenter where
 data ToCoordinator
   = GetState
 
+derive instance genericToCoordinator :: Generic ToCoordinator _
+
 instance encodeJsonToCoordinator :: EncodeJson ToCoordinator where
-  encodeJson GetState =
-    "type" := "GetState"
-      ~> jsonEmptyObject
+  encodeJson = genericEncodeJson
 
 instance decodeJsonToCoordinator :: DecodeJson ToCoordinator where
-  decodeJson json = do
-    obj <- decodeJson json
-    type_ <- obj .: "type"
-
-    case type_ of
-      "GetState" -> Right GetState
-      _ -> Left $ AtKey "type" $ UnexpectedValue $ encodeJson type_
+  decodeJson = genericDecodeJson
 
 --------------------------------------------------------------------------------
 -- Channel ---------------------------------------------------------------------
