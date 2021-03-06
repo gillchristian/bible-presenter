@@ -152,6 +152,10 @@ component = Connect.component $ H.mkComponent
     , activeTab: TabBible
     }
 
+  stillSlide :: forall slots. H.HalogenM State Action slots o m Action
+  stillSlide =
+    SendMsg <<< SetSlide <<< (\bg -> { content: Still, background: Just bg }) <$> H.gets _.bgImage
+
   handleAction :: forall slots. Action -> H.HalogenM State Action slots o m Unit
   handleAction = case _ of
     Initialize -> do
@@ -164,19 +168,20 @@ component = Connect.component $ H.mkComponent
         H.modify_ _ { bible = Loading }
         bible <- RemoteData.fromEither <$> note "Could not download Bible" <$> downloadBible "es_rvr_map.json"
         H.modify_ _ { bible = bible }
+
       mbSlides <- getItem "slides"
       for_ mbSlides $ \slides -> do
         {bgImage} <- H.get
         let newBgImage = fromMaybe bgImage $ _.background =<< Array.head slides
         H.modify_ _ { slides = Inactive slides, bgImage = newBgImage }
-        handleAction $ SendMsg $ SetSlide { background: Just newBgImage, content: Still }
+
+      handleAction =<< stillSlide
 
     ReceiveMsg GetState -> do
-      {bgImage, slides} <- H.get
-      handleAction $ SendMsg $ SetSlide
-        $ case slides of
-            Active ss -> ZipperArray.current ss
-            _ -> { background: Just bgImage, content: Still }
+      {slides} <- H.get
+      case slides of
+        Active ss -> handleAction $ SendMsg $ SetSlide $ ZipperArray.current ss
+        _ -> handleAction =<< stillSlide
 
     SendMsg msg -> do
       {channel} <- H.get
@@ -200,29 +205,34 @@ component = Connect.component $ H.mkComponent
     NewSlideContentChange contents ->
       H.modify_ _ { newSlide = contents }
 
-    ImgSelected img ->
+    ImgSelected img -> do
+      {slides} <- H.get
       H.modify_ _ { bgImage = img }
+      case slides of
+        Active _ -> pure unit
+        Inactive _ -> handleAction =<< stillSlide
+        Paused _ -> handleAction =<< stillSlide
 
     -- TODO: lenses
     TogglePause -> do
-      {slides, bgImage} <- H.get
+      {slides} <- H.get
       case slides of
         Inactive _ -> pure unit
         Active as -> do
           H.modify_ _ { slides = Paused as }
-          handleAction $ SendMsg $ SetSlide { background: Just bgImage, content: Still }
+          handleAction =<< stillSlide
         Paused as -> do
           H.modify_ _ { slides = Active as }
           handleAction $ SendMsg $ SetSlide $ ZipperArray.current as
 
     -- TODO: lenses
     Stop -> do
-      {slides, bgImage} <- H.get
+      {slides} <- H.get
       case slides of
         Inactive _ -> pure unit
         Active as -> H.modify_ _ { slides = Inactive $ ZipperArray.toArray as }
         Paused as -> H.modify_ _ { slides = Inactive $ ZipperArray.toArray as }
-      handleAction $ SendMsg $ SetSlide { background: Just bgImage, content: Still }
+      handleAction =<< stillSlide
 
     -- TODO: lenses
     Start -> do
@@ -277,7 +287,7 @@ component = Connect.component $ H.mkComponent
       {bgImage} <- H.get
       H.modify_ _ { slides = Inactive [] }
       removeItem "slides"
-      handleAction $ SendMsg $ SetSlide { background: Just bgImage, content: Still }
+      handleAction =<< stillSlide
 
     PersistSlides -> do
       slides <- H.gets (Slider.toArray <<<_.slides)

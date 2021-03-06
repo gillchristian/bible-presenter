@@ -6,6 +6,7 @@
   , "aff-promise"
   , "affjax"
   , "argonaut-core"
+  , "argonaut-generic"
   , "codec-argonaut"
   , "console"
   , "datetime"
