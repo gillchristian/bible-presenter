@@ -37,6 +37,7 @@ slide { background, content } =
           , T.itemsCenter
           , T.bgCenter
           , T.bgCover
+          , T.selectNone
           ]
       , HP.prop (H.PropName "style")
           $ "background-image: url('" <> fromMaybe imgA background <> "');"
