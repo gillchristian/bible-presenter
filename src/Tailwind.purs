@@ -475,6 +475,10 @@ py12 = ClassName "py-12"
 py16 :: ClassName
 py16 = ClassName "py-16"
 
+-- | py1
+py1 :: ClassName
+py1 = ClassName "py-1"
+
 -- | py20
 py20 :: ClassName
 py20 = ClassName "py-20"

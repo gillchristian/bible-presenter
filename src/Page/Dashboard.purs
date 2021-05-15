@@ -31,11 +31,12 @@ import Data.Slider (Slider(..))
 import Data.Slider as Slider
 import Data.String as String
 import Data.Traversable (for_)
-import Data.Tuple (snd)
+import Data.Tuple (Tuple(..), snd)
 import Data.ZipperArray as ZipperArray
 import Effect.Aff.Class (class MonadAff)
 import Halogen as H
 import Halogen.HTML as HH
+import Halogen.HTML.Elements.Keyed as HK
 import Halogen.HTML.Events as HE
 import Halogen.HTML.Properties as HP
 import Network.RemoteData (RemoteData(..))
@@ -118,6 +119,9 @@ imgs =
   , "https://images.unsplash.com/photo-1544927093-98a95a4da1dd?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80"
   , "https://images.unsplash.com/photo-1466590559380-c29c7f16d444?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1649&q=80"
   , "https://images.unsplash.com/photo-1562758619-78207a23a6e0?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=1650&q=80"
+  , "https://images.unsplash.com/uploads/14121010130570e22bcdf/e1730efe?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1950&q=80"
+  , "https://images.unsplash.com/photo-1541417904950-b855846fe074?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1925&q=80"
+  , "https://images.unsplash.com/photo-1552065413-8485dd9ae56c?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2088&q=80"
   ]
 
 bibleBreadcrumbs :: forall i p. Breadcrumbs.Crumb p -> Array (Breadcrumbs.Crumb p) -> HH.HTML i p
@@ -431,23 +435,27 @@ component = Connect.component $ H.mkComponent
         ]
         [ HH.text book.name ]
 
-    chapterButton :: Bible.Book -> Int -> Bible.Chapter -> _
+    chapterButton :: Bible.Book -> Int -> Bible.Chapter -> Tuple String _
     chapterButton book n chapter =
-      HH.button
-        [ HP.classes [ T.py2, T.px1, T.border, T.borderGray400, T.selectNone ]
-        , HP.type_ HP.ButtonButton
-        , HE.onClick \_ -> Just $ PickerSelectChapter book chapter n
-        ]
-        [ HH.text $ show n ]
+      Tuple
+        (show n)
+        $ HH.button
+            [ HP.classes [ T.py2, T.px1, T.border, T.borderGray400, T.selectNone ]
+            , HP.type_ HP.ButtonButton
+            , HE.onClick \_ -> Just $ PickerSelectChapter book chapter n
+            ]
+            [ HH.text $ show n ]
 
-    verseButton :: Bible.Book -> Int -> Bible.Chapter -> Int -> String -> _
+    verseButton :: Bible.Book -> Int -> Bible.Chapter -> Int -> String -> Tuple String _
     verseButton book n chapter i verse =
-      HH.button
-        [ HP.classes [ T.py2, T.px1, T.border, T.borderGray400, T.selectNone ]
-        , HP.type_ HP.ButtonButton
-        , HE.onClick \_ -> Just $ PickerSelectVerse book chapter n verse i
-        ]
-        [ HH.text $ show i ]
+      Tuple
+        (show n <> "-" <> show i)
+        $ HH.button
+            [ HP.classes [ T.py2, T.px1, T.border, T.borderGray400, T.selectNone ]
+            , HP.type_ HP.ButtonButton
+            , HE.onClick \_ -> Just $ PickerSelectVerse book chapter n verse i
+            ]
+            [ HH.text $ show i ]
 
     chapterEl :: Bible.Book -> Bible.Chapter -> Int -> _
     chapterEl book chapter n =
@@ -458,7 +466,7 @@ component = Connect.component $ H.mkComponent
             [ { action: Just $ PickerClearChapter book, label:  book.name }
             , { action: Nothing, label:  show n }
             ]
-        , HH.div
+        , HK.div
             [ HP.classes [ T.mt4, T.grid, T.gridCols10, T.gap2 ] ]
             $ map snd
             $ Map.toUnfoldable
@@ -472,7 +480,7 @@ component = Connect.component $ H.mkComponent
         [ bibleBreadcrumbs
             { action: Just PickerClear, label: "Bible" }
             [ { action: Nothing, label:  book.name } ]
-        , HH.div
+        , HK.div
             [ HP.classes [ T.mt4, T.grid, T.gridCols10, T.gap2 ] ]
             $ map snd
             $ Map.toUnfoldable
@@ -503,7 +511,7 @@ component = Connect.component $ H.mkComponent
                     , T.itemsCenter
                     , T.justifyCenter
                     , T.px4
-                    , T.py2
+                    , T.py1
                     , T.border
                     , T.borderTransparent
                     , T.fontMedium
