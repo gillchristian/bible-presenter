@@ -321,7 +321,7 @@ mapCurrentWithIndex ::
     ZipperArray a ->
     ZipperArray b
 mapCurrentWithIndex { cur, rest } (Private_ arr i c) =
-    Private_ (mapWithIndex (\j -> if i == j then cur i else rest i) arr) i (cur i c)
+    Private_ (mapWithIndex (\j -> if i == j then cur i else rest j) arr) i (cur i c)
 
 --------------------------------------------------------------------------------
 -- Instances -------------------------------------------------------------------
