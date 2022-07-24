@@ -23,10 +23,11 @@ import Control.Monad.Reader (class MonadAsk)
 import Data.Array as Array
 import Data.Array.NonEmpty (cons')
 import Data.Either (note)
+import Data.Filterable (filter)
 import Data.FunctorWithIndex (mapWithIndex)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Natural (Natural, intToNat, natToInt)
+import Data.Natural (Natural, intToNat)
 import Data.Slider (Slider(..))
 import Data.Slider as Slider
 import Data.String as String
@@ -54,7 +55,7 @@ derive instance eqTab :: Eq Tab
 
 data Action
   = Initialize
-  | Receive { currentUser :: Maybe Boolean }
+  | Receive {currentUser :: Maybe Boolean}
   | Navigate Route Event
   | NewSlideContentChange String
   | AddSlide
@@ -64,7 +65,7 @@ data Action
   | PersistSlides
   | ClearSlides
     -- Controls
-  | Start
+  | Start (Maybe Natural)
   | TogglePause
   | Stop
   | Next
@@ -130,7 +131,7 @@ bibleBreadcrumbs = Breadcrumbs.breadcrumbs Icons.openBook
 component
   :: forall q o m r
    . MonadAff m
-  => MonadAsk { userEnv :: UserEnv | r } m
+  => MonadAsk {userEnv :: UserEnv | r} m
   => ManageBible m
   => Navigate m
   => LocalStorage m
@@ -145,7 +146,7 @@ component = Connect.component $ H.mkComponent
       }
   }
   where
-  initialState { currentUser } =
+  initialState {currentUser} =
     { currentUser
     , slides: Inactive []
     , newSlide: ""
@@ -158,26 +159,26 @@ component = Connect.component $ H.mkComponent
 
   stillSlide :: forall slots. H.HalogenM State Action slots o m Action
   stillSlide =
-    SendMsg <<< SetSlide <<< (\bg -> { content: Still, background: Just bg }) <$> H.gets _.bgImage
+    SendMsg <<< SetSlide <<< (\bg -> {content: Still, background: Just bg}) <$> H.gets _.bgImage
 
   handleAction :: forall slots. Action -> H.HalogenM State Action slots o m Unit
   handleAction = case _ of
     Initialize -> do
       void $ H.fork do
-        { source, channel } <- H.liftEffect $ Presentation.mkChannel "channel" ReceiveMsg
+        {source, channel} <- H.liftEffect $ Presentation.mkChannel "channel" ReceiveMsg
         void $ H.subscribe source
-        H.modify_ _ { channel = Just channel }
+        H.modify_ _ {channel = Just channel}
 
       void $ H.fork do
-        H.modify_ _ { bible = Loading }
+        H.modify_ _ {bible = Loading}
         bible <- RemoteData.fromEither <$> note "Could not download Bible" <$> downloadBible "es_rvr_map.json"
-        H.modify_ _ { bible = bible }
+        H.modify_ _ {bible = bible}
 
       mbSlides <- getItem "slides"
       for_ mbSlides $ \slides -> do
         {bgImage} <- H.get
         let newBgImage = fromMaybe bgImage $ _.background =<< Array.head slides
-        H.modify_ _ { slides = Inactive slides, bgImage = newBgImage }
+        H.modify_ _ {slides = Inactive slides, bgImage = newBgImage}
 
       handleAction =<< stillSlide
 
@@ -190,11 +191,11 @@ component = Connect.component $ H.mkComponent
     SendMsg msg -> do
       {channel} <- H.get
       case channel of
-        Just { postMessage } ->  H.liftEffect $ postMessage msg
+        Just {postMessage} ->  H.liftEffect $ postMessage msg
         Nothing -> pure unit
 
-    Receive { currentUser } ->
-      H.modify_ _ { currentUser = currentUser }
+    Receive {currentUser} ->
+      H.modify_ _ {currentUser = currentUser}
 
     Navigate route e -> navigate_ e route
 
@@ -203,15 +204,15 @@ component = Connect.component $ H.mkComponent
       case newSlide of
         "" -> pure unit
         contents -> do
-          H.modify_ $ \s -> s { newSlide = "", slides = Slider.snoc s.slides $ { background: Just bgImage, content: Text contents } }
+          H.modify_ $ \s -> s {newSlide = "", slides = Slider.snoc s.slides $ {background: Just bgImage, content: Text contents}}
           handleAction PersistSlides
 
     NewSlideContentChange contents ->
-      H.modify_ _ { newSlide = contents }
+      H.modify_ _ {newSlide = contents}
 
     ImgSelected img -> do
       {slides} <- H.get
-      H.modify_ _ { bgImage = img }
+      H.modify_ _ {bgImage = img}
       case slides of
         Active _ -> pure unit
         Inactive _ -> handleAction =<< stillSlide
@@ -223,10 +224,10 @@ component = Connect.component $ H.mkComponent
       case slides of
         Inactive _ -> pure unit
         Active as -> do
-          H.modify_ _ { slides = Paused as }
+          H.modify_ _ {slides = Paused as}
           handleAction =<< stillSlide
         Paused as -> do
-          H.modify_ _ { slides = Active as }
+          H.modify_ _ {slides = Active as}
           handleAction $ SendMsg $ SetSlide $ ZipperArray.current as
 
     -- TODO: lenses
@@ -234,19 +235,19 @@ component = Connect.component $ H.mkComponent
       {slides} <- H.get
       case slides of
         Inactive _ -> pure unit
-        Active as -> H.modify_ _ { slides = Inactive $ ZipperArray.toArray as }
-        Paused as -> H.modify_ _ { slides = Inactive $ ZipperArray.toArray as }
+        Active as -> H.modify_ _ {slides = Inactive $ ZipperArray.toArray as}
+        Paused as -> H.modify_ _ {slides = Inactive $ ZipperArray.toArray as}
       handleAction =<< stillSlide
 
     -- TODO: lenses
-    Start -> do
+    Start n -> do
       {slides} <- H.get
       case slides of
         Inactive as ->
-          case ZipperArray.fromArray as of
+          case ZipperArray.goIndex (fromMaybe (intToNat 0) n) =<< ZipperArray.fromArray as of
             Nothing -> pure unit
             Just asZip -> do
-               H.modify_ _ { slides = Active asZip }
+               H.modify_ _ {slides = Active asZip}
                handleAction $ SendMsg $ SetSlide $ ZipperArray.current asZip
         _ -> pure unit
 
@@ -260,8 +261,9 @@ component = Connect.component $ H.mkComponent
             Nothing -> pure unit
             Just updated -> do
               handleAction $ SendMsg $ SetSlide $ ZipperArray.current updated
-              H.modify_ _ { slides = Active updated }
-        _ -> pure unit
+              H.modify_ _ {slides = Active updated}
+        _ -> do
+          handleAction $ Start $ Just n
 
     -- TODO: lenses
     Prev -> do
@@ -272,7 +274,7 @@ component = Connect.component $ H.mkComponent
             Nothing -> pure unit
             Just updated -> do
               handleAction $ SendMsg $ SetSlide $ ZipperArray.current updated
-              H.modify_ _ { slides = Active updated }
+              H.modify_ _ {slides = Active updated}
         _ -> pure unit
 
     -- TODO: lenses
@@ -284,12 +286,12 @@ component = Connect.component $ H.mkComponent
             Nothing -> pure unit
             Just updated -> do
               handleAction $ SendMsg $ SetSlide $ ZipperArray.current updated
-              H.modify_ _ { slides = Active updated }
+              H.modify_ _ {slides = Active updated}
         _ -> pure unit
 
     ClearSlides -> do
       {bgImage} <- H.get
-      H.modify_ _ { slides = Inactive [] }
+      H.modify_ _ {slides = Inactive []}
       removeItem "slides"
       handleAction =<< stillSlide
 
@@ -298,29 +300,29 @@ component = Connect.component $ H.mkComponent
       setItem "slides" slides
 
     PickerSelectBook book ->
-      H.modify_ _ { versePicker = SelectedBook book }
+      H.modify_ _ {versePicker = SelectedBook book}
 
     PickerSelectChapter book chapter n ->
-      H.modify_ _ { versePicker = SelectedChapter book chapter n }
+      H.modify_ _ {versePicker = SelectedChapter book chapter n}
 
     PickerSelectVerse book chapter n verse i -> do
       {bgImage} <- H.get
-      let content = Verse { book: book.name, chapter: n, verse: i, contents: verse }
-          slide = { background: Just bgImage, content }
-      H.modify_ $ \s -> s { slides = Slider.snoc s.slides slide }
+      let content = Verse {book: book.name, chapter: n, verse: i, contents: verse}
+          slide = {background: Just bgImage, content}
+      H.modify_ $ \s -> s {slides = Slider.snoc s.slides slide}
       handleAction PersistSlides
 
     PickerClearChapter book ->
-      H.modify_ _ { versePicker = SelectedBook book }
+      H.modify_ _ {versePicker = SelectedBook book}
 
     PickerClear ->
-      H.modify_ _ { versePicker = SelectedNone }
+      H.modify_ _ {versePicker = SelectedNone}
 
     ToggleTab tab ->
-      H.modify_ _ { activeTab = tab }
+      H.modify_ _ {activeTab = tab}
 
   render :: forall slots. State -> H.ComponentHTML Action slots m
-  render { activeTab, currentUser, newSlide, slides, bgImage, bible, versePicker } =
+  render {activeTab, currentUser, newSlide, slides, bgImage, bible, versePicker} =
     Layout.dashboard
       (Just "Dashboard")
       Navigate
@@ -328,30 +330,8 @@ component = Connect.component $ H.mkComponent
       content
 
     where
-    newSlideEl "" = HH.text ""
-    newSlideEl contents =
-      -- TODO: better _new slide_ styles
-      HH.div
-        [ HP.classes
-            [ T.bgGray200
-            , T.textGray400
-            , T.flex
-            , T.justifyCenter
-            , T.itemsCenter
-            , T.flexCol
-            , T.py12
-            , T.px4
-            , T.roundedMd
-            , T.bgCenter
-            , T.bgCover
-            , T.border2
-            , T.borderGray400
-            ]
-        ]
-        $ Slide.multiline contents
-
-    curSlide :: Int -> Slide -> _
-    curSlide _ slide =
+    activeSlide :: Boolean -> Slide -> _
+    activeSlide paused slide =
       HH.div
         [ HP.classes
             [ T.bgGray300
@@ -381,50 +361,64 @@ component = Connect.component $ H.mkComponent
             Verse {book, chapter, verse} -> Slide.highlight $ book <> " " <> show chapter <> ":" <> show verse
         ]
 
-    restSlide :: Natural -> Int -> Slide -> _
-    restSlide offset i slide =
+    slideListElem :: Boolean -> Int -> Slide -> _
+    slideListElem current i slide =
       HH.div
-        [ HE.onDoubleClick $ \_ -> Just $ GoToSlide $ offset + intToNat i
-        , HP.classes
-            [ T.bgGray300
-            , T.textWhite
-            , T.flex
-            , T.justifyCenter
+        [ HP.classes
+            [ T.flex
             , T.itemsCenter
-            , T.flexCol
-            , T.py12
-            , T.px4
+            , T.p1
+            , T.mb2
             , T.roundedMd
-            , T.hoverRing2
-            , T.hoverRingOffset2
-            , T.hoverRingGreen400
-            , T.selectNone
-            , T.bgCenter
-            , T.bgCover
+            , T.cursorPointer
+            , cx T.bgGray100 current
             ]
-        , HP.prop (H.PropName "style") $ "background-image: url('" <> fromMaybe imgA slide.background <> "');"
+        , HE.onDoubleClick $ \_ -> filter (const $ not current) $ Just $ GoToSlide $ intToNat i
         ]
-        [ case slide.content of
-            Still -> HH.text ""
-            Text str -> HH.div [] $ Slide.multiline str
-            Verse {book, chapter, verse} -> Slide.highlight $ book <> " " <> show chapter <> ":" <> show verse
+        [ HH.div
+            [ HP.classes
+                [ T.bgGray300
+                , T.roundedMd
+                , T.bgCenter
+                , T.bgCover
+                , T.h8
+                , T.w12
+                ]
+            , HP.prop (H.PropName "style") $ "background-image: url('" <> fromMaybe imgA slide.background <> "');"
+            ]
+            []
+        , HH.div
+            [ HP.classes
+                [ T.ml4
+                , T.selectNone
+                ]
+            ]
+            [ HH.text $ case slide.content of
+                Still -> ""
+                Text str -> str
+                Verse {book, chapter, verse} -> book <> " " <> show chapter <> ":" <> show verse
+            ]
         ]
 
-    imgEl img =
-      HH.img
-        [ HP.classes
+    imgButton img =
+      HH.button
+        [ HE.onClick \_ -> Just $ ImgSelected img
+        , HP.classes
             [ T.roundedMd
-            , T.cursorPointer
             , T.hoverRing2
             , T.hoverRingGreen400
             , T.hoverRingOffset2
+            , T.focusRing2
+            , T.focusRingGreen400
+            , T.focusRingOffset2
+            , T.focusOutlineNone
             , cx T.ring2 $ bgImage == img
             , cx T.ringOffset2 $ bgImage == img
             , cx T.ringIndigo500 $ bgImage == img
+            , T.h48
             ]
-        , HP.src img
-        , HE.onClick \_ -> Just $ ImgSelected img
         ]
+        [ HH.img [ HP.classes [ T.hFull, T.wFull, T.objectCover, T.roundedMd, T.cursorPointer ], HP.src img ] ]
 
     bookButton :: Bible.Book -> _
     bookButton book =
@@ -457,14 +451,14 @@ component = Connect.component $ H.mkComponent
             ]
             [ HH.text $ show i ]
 
-    chapterEl :: Bible.Book -> Bible.Chapter -> Int -> _
-    chapterEl book chapter n =
+    chapterSelectorElem :: Bible.Book -> Bible.Chapter -> Int -> _
+    chapterSelectorElem book chapter n =
       HH.div
         [ HP.classes [ T.mt4 ] ]
         [ bibleBreadcrumbs
-            { action: Just PickerClear, label: "Bible" }
-            [ { action: Just $ PickerClearChapter book, label:  book.name }
-            , { action: Nothing, label:  show n }
+            {action: Just PickerClear, label: "Bible"}
+            [ {action: Just $ PickerClearChapter book, label:  book.name}
+            , {action: Nothing, label:  show n}
             ]
         , HK.div
             [ HP.classes [ T.mt4, T.grid, T.gridCols10, T.gap2 ] ]
@@ -473,13 +467,13 @@ component = Connect.component $ H.mkComponent
             $ mapWithIndex (verseButton book n chapter) chapter
         ]
 
-    bookEl :: Bible.Book -> _
-    bookEl book =
+    bookSelectorElem :: Bible.Book -> _
+    bookSelectorElem book =
       HH.div
         [ HP.classes [ T.mt4 ] ]
         [ bibleBreadcrumbs
-            { action: Just PickerClear, label: "Bible" }
-            [ { action: Nothing, label:  book.name } ]
+            {action: Just PickerClear, label: "Bible"}
+            [ {action: Nothing, label:  book.name} ]
         , HK.div
             [ HP.classes [ T.mt4, T.grid, T.gridCols10, T.gap2 ] ]
             $ map snd
@@ -524,9 +518,11 @@ component = Connect.component $ H.mkComponent
                     , T.focusRingOffset2
                     , T.focusRingRed500
                     , T.smTextSm
+                    , T.disabledCursorNotAllowed
+                    , T.disabledTextGray500
                     ]
                 , HP.type_ HP.ButtonButton
-                , HE.onClick \_ -> Just ClearSlides -- TODO: nothing on disabled
+                , HE.onClick \_ -> filter (const $ not $ Slider.null slides) $ Just ClearSlides
                 , HP.disabled $ Slider.null slides
                 ]
                 [ HH.text "Clear slides" ]
@@ -542,9 +538,9 @@ component = Connect.component $ H.mkComponent
                 []
                 [ tabs
                     $ cons'
-                        { active: TabBible == activeTab, action: Just $ ToggleTab TabBible, label: "Bible verse slide" }
-                    $ [ { active: TabText == activeTab, action: Just $ ToggleTab TabText, label: "Text slide" }
-                      , { active: TabBg == activeTab, action: Just $ ToggleTab TabBg, label: "Background" }
+                        {active: TabBible == activeTab, action: Just $ ToggleTab TabBible, label: "Bible verse slide"}
+                    $ [ {active: TabText == activeTab, action: Just $ ToggleTab TabText, label: "Text slide"}
+                      , {active: TabBg == activeTab, action: Just $ ToggleTab TabBg, label: "Background"}
                       ]
                 , case activeTab of
                     TabBible ->
@@ -561,7 +557,7 @@ component = Connect.component $ H.mkComponent
                                 SelectedNone ->
                                   HH.div
                                     [ HP.classes [ T.mt4 ] ]
-                                    [ bibleBreadcrumbs { action: Nothing, label: "Bible" } []
+                                    [ bibleBreadcrumbs {action: Nothing, label: "Bible"} []
                                     , HH.div
                                         [ HP.classes [ T.textGray700, T.mt4, T.grid, T.gridCols6, T.gap2 ] ]
                                         $ map  bookButton b
@@ -569,12 +565,13 @@ component = Connect.component $ H.mkComponent
                                 SelectedBook book ->
                                   HH.div
                                     [ HP.classes [ T.mt4 ] ]
-                                    [ bookEl book ]
+                                    [ bookSelectorElem book ]
                                 SelectedChapter book chapter n ->
                                   HH.div
                                     [ HP.classes [ T.mt4 ] ]
-                                    [ chapterEl book chapter n ]
+                                    [ chapterSelectorElem book chapter n ]
                             Failure msg ->
+                              -- TODO: error msg
                               HH.div
                                 [ HP.classes [ T.textRed600, T.mt4 ] ]
                                 [ HH.text msg ]
@@ -618,7 +615,7 @@ component = Connect.component $ H.mkComponent
                         [ HP.classes [ T.mt8 ] ]
                         [ HH.div
                             [ HP.classes [ T.grid, T.gridCols4, T.gap4, T.mt2 ] ]
-                            $ map imgEl imgs
+                            $ map imgButton imgs
                         ]
                 ]
             ]
@@ -628,7 +625,7 @@ component = Connect.component $ H.mkComponent
             ,case slides of
                 Active as ->
                   HH.div
-                    [ HP.classes [ T.flex, T.justifyBetween, T.itemsCenter ] ]
+                    [ HP.classes [ T.flex, T.justifyBetween, T.itemsCenter, T.mb2 ] ]
                     [ playerButton Icons.stop false $ Just Stop
                     , playerButton Icons.prev (ZipperArray.atStart as) $ Just Prev
                     , playerButton Icons.pause false $ Just TogglePause
@@ -636,7 +633,7 @@ component = Connect.component $ H.mkComponent
                     ]
                 Paused as ->
                   HH.div
-                    [ HP.classes [ T.flex, T.justifyBetween, T.itemsCenter ] ]
+                    [ HP.classes [ T.flex, T.justifyBetween, T.itemsCenter, T.mb2 ] ]
                     [ playerButton Icons.stop false $ Just Stop
                     , playerButton Icons.prev true Nothing
                     , playerButton Icons.play false $ Just TogglePause
@@ -644,28 +641,24 @@ component = Connect.component $ H.mkComponent
                     ]
                 Inactive as ->
                   HH.div
-                    [ HP.classes [ T.flex ] ]
-                    [ playerButton Icons.play (Array.null as) $ Just Start ]
+                    [ HP.classes [ T.flex, T.mb2 ] ]
+                    [ playerButton Icons.play (Array.null as) $ Just $ Start Nothing ]
+            , HH.div
+                []
+                $ Slider.toArray
+                $ Slider.mapCurrentWithIndex {cur: slideListElem true, rest: slideListElem false} slides
+
             , case slides of
-                Active slides' ->
+                Active as ->
                   HH.div
-                    [ HP.classes [ T.mt6, T.flex, T.flexCol, T.gap4 ] ]
-                    $ Array.cons (curSlide (natToInt $ ZipperArray.curIndex slides') (ZipperArray.current slides'))
-                    $ flip Array.snoc (newSlideEl newSlide)
-                    $ mapWithIndex (restSlide $ ZipperArray.curIndex slides' + intToNat 1)
-                    $ ZipperArray.succ slides'
-                Paused slides' ->
+                    [ HP.classes [ T.mt6 ] ]
+                    [ activeSlide false $ ZipperArray.current as ]
+                Paused as ->
                   HH.div
-                    [ HP.classes [ T.mt6, T.flex, T.flexCol, T.gap4 ] ]
-                    $ Array.cons (curSlide (natToInt $ ZipperArray.curIndex slides') (ZipperArray.current slides'))
-                    $ flip Array.snoc (newSlideEl newSlide)
-                    $ mapWithIndex (restSlide $ ZipperArray.curIndex slides' + intToNat 1)
-                    $ ZipperArray.succ slides'
-                Inactive as ->
-                  HH.div
-                    [ HP.classes [ T.mt6, T.flex, T.flexCol, T.gap4 ] ]
-                    $ flip Array.snoc (newSlideEl newSlide)
-                    $ mapWithIndex (restSlide $ intToNat 0) as
+                    [ HP.classes [ T.mt6 ] ]
+                    [ activeSlide true $ ZipperArray.current as ]
+                Inactive _ ->
+                  HH.text ""
             ]
         ]
 

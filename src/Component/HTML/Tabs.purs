@@ -28,7 +28,7 @@ tabs ts =
 
 tab :: forall i p. Tab p -> HH.HTML i p
 tab { active, action, label } =
-  HH.a
+  HH.button
     [ HE.onClick \_ -> action
     , HP.classes
         [ cx T.borderTransparent $ not active

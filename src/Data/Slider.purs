@@ -43,19 +43,19 @@ toArray (Inactive as) = as
 -- Traversals ------------------------------------------------------------------
 --------------------------------------------------------------------------------
 
-mapCurrent :: forall a b. { cur :: a -> b, rest :: a -> b } -> Slider a -> Slider b
+mapCurrent :: forall a b. {cur :: a -> b, rest :: a -> b} -> Slider a -> Slider b
 mapCurrent fs (Active as) = Active $ ZipperArray.mapCurrent fs as
 mapCurrent fs (Paused as) = Paused $ ZipperArray.mapCurrent fs as
-mapCurrent { rest } (Inactive as) = Inactive $ map rest as
+mapCurrent {rest} (Inactive as) = Inactive $ map rest as
 
 mapCurrentWithIndex ::
     forall a b.
-    { cur :: Int -> a -> b, rest :: Int -> a -> b } ->
+    {cur :: Int -> a -> b, rest :: Int -> a -> b} ->
     Slider a ->
     Slider b
 mapCurrentWithIndex fs (Active as) = Active $ ZipperArray.mapCurrentWithIndex fs as
 mapCurrentWithIndex fs (Paused as) = Paused $ ZipperArray.mapCurrentWithIndex fs as
-mapCurrentWithIndex { rest } (Inactive as) = Inactive $ mapWithIndex rest as
+mapCurrentWithIndex {rest} (Inactive as) = Inactive $ mapWithIndex rest as
 
 --------------------------------------------------------------------------------
 -- Inspection ------------------------------------------------------------------

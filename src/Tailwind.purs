@@ -131,6 +131,10 @@ disabledCursorNotAllowed = ClassName "disabled:cursor-not-allowed"
 disabledTextGray300 :: ClassName
 disabledTextGray300 = ClassName "disabled:text-gray-300"
 
+-- | disabledTextGray500
+disabledTextGray500 :: ClassName
+disabledTextGray500 = ClassName "disabled:text-gray-500"
+
 -- | fixed
 fixed :: ClassName
 fixed = ClassName "fixed"
@@ -227,6 +231,10 @@ h10 = ClassName "h-10"
 h16 :: ClassName
 h16 = ClassName "h-16"
 
+-- | h48
+h48 :: ClassName
+h48 = ClassName "h-48"
+
 -- | h5
 h5 :: ClassName
 h5 = ClassName "h-5"
@@ -234,6 +242,10 @@ h5 = ClassName "h-5"
 -- | h8
 h8 :: ClassName
 h8 = ClassName "h-8"
+
+-- | hFull
+hFull :: ClassName
+hFull = ClassName "h-full"
 
 -- | hScreen
 hScreen :: ClassName
@@ -406,6 +418,10 @@ negMbPx = ClassName "-mb-px"
 -- | negMt32
 negMt32 :: ClassName
 negMt32 = ClassName "-mt-32"
+
+-- | objectCover
+objectCover :: ClassName
+objectCover = ClassName "object-cover"
 
 -- | p1
 p1 :: ClassName
@@ -638,6 +654,10 @@ textWhite = ClassName "text-white"
 -- | w10
 w10 :: ClassName
 w10 = ClassName "w-10"
+
+-- | w12
+w12 :: ClassName
+w12 = ClassName "w-12"
 
 -- | w5
 w5 :: ClassName

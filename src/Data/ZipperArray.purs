@@ -203,11 +203,11 @@ next (Private_ arr i _) = NEA.index arr (i + 1)
 -- | `cur` function is used for the current item, and the `rest` function is
 -- | used for the other items.
 foldlCurrent :: forall a b.
-    { cur :: b -> a -> b, rest :: b -> a -> b } ->
+    {cur :: b -> a -> b, rest :: b -> a -> b} ->
     b ->
     ZipperArray a ->
     b
-foldlCurrent { cur, rest } b (Private_ arr i _) =
+foldlCurrent {cur, rest} b (Private_ arr i _) =
     foldlWithIndex (\j -> if i == j then cur else rest) b arr
 
 -- | Performs a foldr using the provided functions to transform the items. The
@@ -215,11 +215,11 @@ foldlCurrent { cur, rest } b (Private_ arr i _) =
 -- | used for the other items.
 foldrCurrent ::
     forall a b.
-    { cur :: a -> b -> b, rest :: a -> b -> b } ->
+    {cur :: a -> b -> b, rest :: a -> b -> b} ->
     b ->
     ZipperArray a ->
     b
-foldrCurrent { cur, rest } b (Private_ arr i _) =
+foldrCurrent {cur, rest} b (Private_ arr i _) =
     foldrWithIndex (\j -> if i == j then cur else rest) b arr
 
 -- | Performs a foldlWithIndex using the provided functions to transform the
@@ -227,11 +227,11 @@ foldrCurrent { cur, rest } b (Private_ arr i _) =
 -- | function is used for the other items.
 foldlWithIndexCurrent ::
     forall a b.
-    { cur :: Int -> b -> a -> b, rest :: Int -> b -> a -> b } ->
+    {cur :: Int -> b -> a -> b, rest :: Int -> b -> a -> b} ->
     b ->
     ZipperArray a ->
     b
-foldlWithIndexCurrent { cur, rest } b (Private_ arr i _) =
+foldlWithIndexCurrent {cur, rest} b (Private_ arr i _) =
     foldlWithIndex (\j -> (if i == j then cur else rest) j) b arr
 
 -- | Performs a foldrWithIndex using the provided functions to transform the
@@ -239,11 +239,11 @@ foldlWithIndexCurrent { cur, rest } b (Private_ arr i _) =
 -- | function is used for the other items.
 foldrWithIndexCurrent ::
     forall a b.
-    { cur :: Int -> a -> b -> b, rest :: Int -> a -> b -> b } ->
+    {cur :: Int -> a -> b -> b, rest :: Int -> a -> b -> b} ->
     b ->
     ZipperArray a ->
     b
-foldrWithIndexCurrent { cur, rest } b (Private_ arr i _) =
+foldrWithIndexCurrent {cur, rest} b (Private_ arr i _) =
     foldrWithIndex (\j -> (if i == j then cur else rest) j) b arr
 
 --------------------------------------------------------------------------------
@@ -309,18 +309,18 @@ goNext z@(Private_ arr i _) = Private_ arr (i + 1) <$> next z
 -- | used for the other items.
 mapCurrent ::
     forall a b.
-    { cur :: a -> b, rest :: a -> b } ->
+    {cur :: a -> b, rest :: a -> b} ->
     ZipperArray a ->
     ZipperArray b
-mapCurrent { cur, rest } (Private_ arr i c) =
+mapCurrent {cur, rest} (Private_ arr i c) =
     Private_ (mapWithIndex (\j -> if i == j then cur else rest) arr) i (cur c)
 
 mapCurrentWithIndex ::
     forall a b.
-    { cur :: Int -> a -> b, rest :: Int -> a -> b } ->
+    {cur :: Int -> a -> b, rest :: Int -> a -> b} ->
     ZipperArray a ->
     ZipperArray b
-mapCurrentWithIndex { cur, rest } (Private_ arr i c) =
+mapCurrentWithIndex {cur, rest} (Private_ arr i c) =
     Private_ (mapWithIndex (\j -> if i == j then cur i else rest j) arr) i (cur i c)
 
 --------------------------------------------------------------------------------

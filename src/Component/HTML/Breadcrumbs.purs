@@ -3,7 +3,6 @@ module Bible.Component.HTML.Breadcrumbs where
 import Prelude
 
 import Bible.Component.HTML.Icons as Icons
-import Bible.Component.HTML.Utils (cx)
 import Data.Array (cons, null)
 import Data.Foldable (length)
 import Data.FunctorWithIndex (mapWithIndex)
@@ -24,32 +23,47 @@ breadcrumbs mainIcon main rest =
     [ HP.classes [ T.flex ] ]
     [ HH.ol
         [ HP.classes [ T.flex, T.itemsCenter, T.spaceX4 ] ]
-        $ cons mainEl
+        $ cons mainElem
         $ mapWithIndex (crumb $ length rest) rest
 
     ]
   where
-  mainEl =
+  mainElem =
     HH.li
       []
-      [ HH.a
-          [ HE.onClick \_ -> main.action
-          , HP.classes
-              [ T.flex
-              , T.itemsCenter
-              , T.textGray500
-              , T.hoverTextGray700
-              , cx T.cursorPointer $ not $ null rest
+      [ case null rest of
+          true ->
+            HH.div
+              [ HE.onClick \_ -> main.action
+              , HP.classes
+                  [ T.flex
+                  , T.itemsCenter
+                  , T.textGray500
+                  ]
               ]
-          ]
-          [ HH.div
-              []
-              [ mainIcon [ Icons.classes [ T.flexShrink0, T.h5, T.w5 ] ] ]
-          , HH.span
-              [ HP.classes [ T.ml4, T.textSm, T.fontMedium ] ]
-              [ HH.text main.label ]
-          ]
+              mainContent
+          false ->
+            HH.button
+              [ HE.onClick \_ -> main.action
+              , HP.classes
+                  [ T.flex
+                  , T.itemsCenter
+                  , T.textGray500
+                  , T.hoverTextGray700
+                  , T.cursorPointer
+                  ]
+              ]
+              mainContent
       ]
+
+  mainContent =
+    [ HH.div
+        []
+        [ mainIcon [ Icons.classes [ T.flexShrink0, T.h5, T.w5 ] ] ]
+    , HH.span
+        [ HP.classes [ T.ml4, T.textSm, T.fontMedium ] ]
+        [ HH.text main.label ]
+    ]
 
 crumb :: forall i p. Int -> Int -> Crumb p -> HH.HTML i p
 crumb total i {label, action} =
@@ -58,18 +72,30 @@ crumb total i {label, action} =
     [ HH.div
         [ HP.classes [ T.flex, T.itemsCenter ] ]
         [ Icons.chevronRight [ Icons.classes [ T.flexShrink0, T.h5, T.w5, T.textGray400 ] ]
-        , HH.a
-            [ HE.onClick \_ -> action
-            , HP.classes
-                [ T.ml4
-                , T.textSm
-                , T.fontMedium
-                , T.textGray500
-                , T.hoverTextGray700
-                , cx T.cursorPointer $ not isLast
-                ]
-            ]
-            [ HH.text label ]
+        , case isLast of
+            false ->
+              HH.button
+                  [ HE.onClick \_ -> action
+                  , HP.classes
+                      [ T.ml4
+                      , T.textSm
+                      , T.fontMedium
+                      , T.textGray500
+                      , T.hoverTextGray700
+                      , T.cursorPointer
+                      ]
+                  ]
+                  [ HH.text label ]
+            true ->
+              HH.div
+                  [ HP.classes
+                      [ T.ml4
+                      , T.textSm
+                      , T.fontMedium
+                      , T.textGray500
+                      ]
+                  ]
+                  [ HH.text label ]
         ]
     ]
   where isLast = total == i + 1
